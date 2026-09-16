@@ -9,7 +9,7 @@ import {promisify} from 'node:util';
 
 const oldArchive = process.env.ALTRON_OLD_ARCHIVE;
 
-test('a released 0.2 profile upgrades and rolls back through Desktop without losing new data', {skip: !oldArchive, timeout: 300000}, async () => {
+test('a released profile upgrades and rolls back through Desktop without losing new data', {skip: !oldArchive, timeout: 300000}, async () => {
   const desktop = process.env.ALTRON_JS_HOME;
   const python = process.env.ALTRON_PYTHON;
   assert.ok(desktop && python);
@@ -35,9 +35,15 @@ test('a released 0.2 profile upgrades and rolls back through Desktop without los
   console.log(`Upgrade evidence: ${root}`);
   let app;
   let page;
+  let profileImported = false;
   const launch = async () => {
     app = await _electron.launch({executablePath: require('electron'), args: [desktop, '--local'], cwd: root, env, timeout: 45000});
     page = await app.firstWindow({timeout: 45000});
+    if (profileImported) {
+      const setupLater = page.getByRole('button', {name: /Выберу провайдера позже|Choose.*later|Set up later/i});
+      await page.addLocatorHandler(setupLater, () => setupLater.click());
+      await page.waitForFunction(() => window.__HERMES_PLUGIN_SDK__?.host.state.gateway.get() === 'open', null, {timeout: 60000});
+    }
   };
   const close = async () => {await app.close(); app = null;};
   const selectProfile = async name => {
@@ -65,6 +71,7 @@ test('a released 0.2 profile upgrades and rolls back through Desktop without los
     await page.getByRole('button', {name: /Выберу провайдера позже|Choose.*later|Set up later/i}).click({timeout: 60000});
     await importProfile(oldArchive);
     await page.getByRole('button', {name: 'altron', exact: true}).waitFor();
+    profileImported = true;
     await close();
     await launch();
     await selectProfile('altron');
@@ -76,11 +83,25 @@ test('a released 0.2 profile upgrades and rolls back through Desktop without los
     await page.getByLabel('Папка проекта', {exact: true}).fill(work);
     await page.getByRole('button', {name: 'Создать проект', exact: true}).click();
     await page.getByRole('heading', {name: 'Existing project', exact: true}).waitFor();
-    await page.getByLabel('Какой результат нужен', {exact: true}).fill('Task created in 0.2');
+    await page.getByLabel('Какой результат нужен', {exact: true}).fill('Task created before upgrade');
     await page.getByLabel('Как проверить готовность', {exact: true}).fill('Survives upgrade');
     await page.getByRole('button', {name: 'Создать задачу', exact: true}).click();
-    await page.getByText('Task created in 0.2', {exact: true}).waitFor();
-    const before = await readProjects();
+    await page.getByText('Task created before upgrade', {exact: true}).waitFor();
+    const oldTeamEditor = await page.getByText('Состав команды', {exact: true}).count();
+    if (oldTeamEditor) {
+      await page.getByText('Состав команды', {exact: true}).click();
+      await page.getByLabel('Модель — Техническая работа', {exact: true}).fill('qa-no-inference');
+      await page.getByLabel('Провайдер — Техническая работа', {exact: true}).fill('qa-no-provider');
+      await page.getByRole('button', {name: 'Сохранить состав команды', exact: true}).click();
+      await page.getByLabel('План для согласования', {exact: true}).fill('A preserved plan that has never started');
+      await page.getByText('Последовательность специалистов', {exact: true}).click();
+      await page.getByRole('button', {name: 'Добавить шаг', exact: true}).click();
+      await page.getByLabel('Результат шага 1', {exact: true}).fill('Do not execute; this is an upgrade fixture');
+      await page.getByLabel('Критерии шага 1', {exact: true}).fill('Plan is preserved after cancellation');
+      await page.getByRole('button', {name: 'Согласовать командный план', exact: true}).click();
+      await page.getByRole('button', {name: 'Запустить согласованную команду', exact: true}).waitFor();
+    }
+    let before = await readProjects();
     const oldCode = await fs.readFile(path.join(profileHome, 'plugins/altron/dashboard/plugin_api.py'));
     const oldUi = await fs.readFile(path.join(home, 'desktop-plugins/altron/plugin.js'));
     await fs.writeFile(path.join(profileHome, '.env'), 'QA_SENTINEL=preserve-me\n');
@@ -97,6 +118,20 @@ test('a released 0.2 profile upgrades and rolls back through Desktop without los
     await page.getByRole('button', {name: 'Обновление Altron', exact: true}).click();
     await page.getByLabel('Профиль для обновления', {exact: true}).selectOption('altron');
     await page.getByLabel('Я полностью закрыл остальные окна Hermes', {exact: true}).check();
+    if (oldTeamEditor && JSON.parse(before[0][1]).tasks[0].team.status === 'ready') {
+      await page.getByRole('button', {name: 'Отменить этот незапущенный план', exact: true}).click();
+      await page.getByLabel('Причина отмены старого плана', {exact: true}).fill('Explicit cancellation before upgrade');
+      await page.getByRole('button', {name: 'Подтверждаю отмену старого плана', exact: true}).click();
+      await page.getByText('Незапущенных командных планов нет.', {exact: true}).waitFor();
+      const afterCancellation = await readProjects();
+      const task = JSON.parse(afterCancellation[0][1]).tasks[0];
+      assert.equal(task.status, 'cancelled');
+      assert.equal(task.team.status, 'cancelled');
+      assert.deepEqual(task.team.steps, JSON.parse(before[0][1]).tasks[0].team.steps);
+      assert.equal(task.plan, JSON.parse(before[0][1]).tasks[0].plan);
+      assert.deepEqual(JSON.parse(afterCancellation[0][1]).runs, []);
+      before = afterCancellation;
+    }
     await page.getByText('Обслуживание Altron', {exact: true}).click();
     await page.getByLabel('Полный путь к архиву Altron', {exact: true}).fill(archive);
     const archiveHash = createHash('sha256').update(await fs.readFile(archive)).digest('hex');
@@ -116,7 +151,7 @@ test('a released 0.2 profile upgrades and rolls back through Desktop without los
     await launch();
     await selectProfile('altron');
     await page.getByRole('button', {name: 'Altron', exact: true}).click();
-    await page.getByText('Task created in 0.2', {exact: true}).waitFor();
+    await page.getByText('Task created before upgrade', {exact: true}).waitFor();
     await page.getByText('Состав команды', {exact: true}).waitFor();
     await page.getByLabel('Новое решение', {exact: true}).fill('Decision created after upgrading');
     await page.getByRole('button', {name: 'Сохранить решение', exact: true}).click();
@@ -138,17 +173,17 @@ test('a released 0.2 profile upgrades and rolls back through Desktop without los
     await launch();
     await selectProfile('altron');
     await page.getByRole('button', {name: 'Altron', exact: true}).click();
-    await page.getByText('Task created in 0.2', {exact: true}).waitFor();
+    await page.getByText('Task created before upgrade', {exact: true}).waitFor();
     await page.locator('p').filter({hasText: /^Decision created after upgrading$/}).waitFor();
-    assert.equal(await page.getByText('Состав команды', {exact: true}).count(), 0);
+    assert.equal(await page.getByText('Состав команды', {exact: true}).count(), oldTeamEditor);
     assert.deepEqual(await fs.readFile(path.join(profileHome, 'plugins/altron/dashboard/plugin_api.py')), oldCode);
     assert.deepEqual(await fs.readFile(path.join(home, 'desktop-plugins/altron/plugin.js')), oldUi);
     assert.deepEqual(await readProjects(), after);
     for (const [name, bytes] of Object.entries(privateFiles)) assert.deepEqual(await fs.readFile(path.join(profileHome, name)), bytes, name);
     assert.equal(JSON.parse(await fs.readFile(journalPath, 'utf8')).operation.state, 'rolled_back');
-    await fs.writeFile(path.join(root, 'result.json'), JSON.stringify({passed: true, realDesktop: true, oldArchiveSha256: createHash('sha256').update(await fs.readFile(oldArchive)).digest('hex'), archiveSha256: archiveHash, bootstrapArchiveSha256: createHash('sha256').update(await fs.readFile(bootstrapArchive)).digest('hex'), oldProfileImportedThroughUI: true, maintenanceProfileImportedThroughUI: true, oldTasksPreserved: true, newDataPreservedAfterRollback: true, oldCodeRestoredByteForByte: true, privateFilesPreserved: Object.keys(privateFiles), externalInferenceAuthorized: false, credentialFilesCopied: false}, null, 2));
+    await fs.writeFile(path.join(root, 'result.json'), JSON.stringify({passed: true, realDesktop: true, oldArchiveSha256: createHash('sha256').update(await fs.readFile(oldArchive)).digest('hex'), archiveSha256: archiveHash, bootstrapArchiveSha256: createHash('sha256').update(await fs.readFile(bootstrapArchive)).digest('hex'), oldProfileImportedThroughUI: true, legacyUnstartedPlanCancelledThroughUI: Boolean(oldTeamEditor), maintenanceProfileImportedThroughUI: true, oldTasksPreserved: true, newDataPreservedAfterRollback: true, oldCodeRestoredByteForByte: true, privateFilesPreserved: Object.keys(privateFiles), externalInferenceAuthorized: false, credentialFilesCopied: false}, null, 2));
   } finally {
-    if (page && !page.isClosed()) await fs.writeFile(path.join(root, 'ui-status.json'), JSON.stringify({text: (await page.locator('body').innerText()).slice(0, 18000), alerts: await page.getByRole('alert').allTextContents()}, null, 2));
+    if (page && !page.isClosed()) await fs.writeFile(path.join(root, 'ui-status.json'), JSON.stringify({text: (await page.locator('body').innerText()).slice(0, 18000), alerts: await page.getByRole('alert').allTextContents(), context: await page.evaluate(() => ({profile: window.__HERMES_PLUGIN_SDK__?.host.state.profile.get(), gateway: window.__HERMES_PLUGIN_SDK__?.host.state.gateway.get(), pluginDecisions: JSON.parse(localStorage.getItem('hermes.desktop.pluginDecisions.v2') || '{}')}))}, null, 2));
     if (app) await close();
   }
 });

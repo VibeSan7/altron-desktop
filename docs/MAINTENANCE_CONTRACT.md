@@ -10,6 +10,8 @@ stage(archive_bytes: bytes, expected_sha256: str) -> dict
 apply(stage_id: str) -> dict
 rollback() -> dict
 status() -> dict
+pending_plans() -> dict
+cancel_pending_plan(project_id: str, task_id: str, reason: str) -> dict
 ```
 
 `profile_home` и `desktop_home` — абсолютные существующие каталоги. В профиле должны существовать `plugins/altron`, `altron/altron.db`; в Desktop — `desktop-plugins/altron`. `desktop_home` может совпадать с `profile_home`.
@@ -61,15 +63,27 @@ status() -> dict
 
 `events` фиксируют порядок действий и подлинные старые/новые SHA-256. В `backups/<backup_id>/backup.json` сохраняются записи затронутых файлов, старые байты в `code/`, staged новые байты в `new/` и проверенная SQLite-копия `altron.db`. Неизвестные локальные файлы не удаляются.
 
-Применение удерживает атомарный профильный lock и общий Desktop lock. Чужой или оставшийся после аварии lock не снимается автоматически. Сначала валидируется `user_version=1`, структура `altron_projects` и JSON документов: запрещены `prepared`, `running`, `unknown`, `cancel_requested`, `reported` без terminal status и team-статусы `ready`, `running`, `paused`, `unknown`. Блокировка записи SQLite удерживается до конца замены/возврата, поэтому новый запуск не вклинивается между проверкой и изменением кода. После этого создаётся SQLite backup через `Connection.backup`, выполняется `PRAGMA integrity_check`, а код меняется только через `os.replace`.
+Применение удерживает атомарный профильный lock и общий Desktop lock. Чужой или оставшийся после аварии lock не снимается автоматически. Сначала валидируется `user_version=1`, структура `altron_projects` и JSON документов: запрещены `prepared`, `running`, `unknown`, `cancel_requested`, `reported` и любой привязанный к сеансу запуск без terminal status (включая `failed`/`interrupted`), и team-статусы `ready`, `running`, `paused`, `unknown`. Блокировка записи SQLite удерживается до конца замены/возврата, поэтому новый запуск не вклинивается между проверкой и изменением кода. После этого создаётся SQLite backup через `Connection.backup`, выполняется `PRAGMA integrity_check`, а код меняется только через `os.replace`.
 
 Если компенсация отказала, состояние журнала — `recovery_required`. Следующий `status` не сообщает об успехе. Явный `rollback` снова требует оба lock; он не снимает чужой lock, проверяет совместимость текущей БД и восстанавливает только файлы, чьи текущие байты соответствуют staged новой версии. Для обычного `applied` rollback сначала проверяет все затронутые файлы целиком, поэтому частичное восстановление при изменённом пользователем файле не начинается. Новые файлы удаляются только если их хеш всё ещё соответствует установленной версии.
+
+## Отмена, попытки и восстановление
+
+Отменённый план имеет статус `cancelled` у задачи и команды. Это не удаляет историю и не скрывает реальные исполнения: все записи `runs`, включая архивные попытки, по-прежнему проверяются перед обслуживанием. Новая попытка получает увеличенный `attempt`, а предыдущая запись задачи — снимок в `attempts`; формат SQLite остаётся 1.
+
+Восстановление выполняется отдельным явным действием. Адаптер читает реестр `tui_gateway.server`, сверяет сохранённый ID сеанса, профиль и папку. Активный/ожидающий подтверждения/строящийся исполнитель не закрывается. Неработающий старый runtime закрывается штатным механизмом Hermes, чтобы запоздавшая отправка не запустила его снова. Затем `active_session_liveness_guard` удерживает штатную блокировку владения до записи результата в Altron. Чужой процесс, непроверяемое состояние ОС, повреждение реестра или несовместимая версия не дают разрешения. Не используются `session.resume` и `prompt.submit`.
+
+Отсутствие активного исполнения не доказывает успешное выполнение. Восстановленный запуск помечается прерванным; переданные файлы сохраняются, команда не переходит к следующему шагу. Возврат на доработку и новый запуск требуют отдельных действий пользователя. Старый код 0.2/0.3 не показывает новые элементы интерфейса после rollback, хотя база сохраняется; работать с новой историей нужно после повторного обновления.
+
+### Переход со старой версии с незапущенным планом
+
+Отдельный профиль обслуживания может показать и явно отменить только командный план со статусами `approved` / `ready`, у которого все шаги `pending` без `run_id`, а для задачи нет ни одного исполнения. Подтверждение включает выбранный профиль и причину. При отмене профильная блокировка и `BEGIN IMMEDIATE` защищают повторную проверку и запись от одновременного старта. Меняются только статусы задачи/команды и запись об отмене; план, шаги и остальные данные сохраняются. Это действие не закрывает исполнителей и не отменяет обычную проверку `active_operations` перед обновлением. Любой уже созданный запуск делает эту операцию недоступной.
 
 ## Стабильные коды ошибок
 
 `MaintenanceError` наследуется от `ValueError`; строковое представление всегда равно машинному коду:
 
-`paths_must_be_absolute`, `invalid_profile_home`, `invalid_desktop_home`, `invalid_profile_code`, `invalid_profile_data`, `invalid_database`, `invalid_desktop_code`, `path_is_link`, `lock_exists`, `journal_invalid`, `archive_bytes_invalid`, `expected_sha256_invalid`, `archive_too_large`, `archive_checksum_mismatch`, `invalid_archive`, `archive_path_invalid`, `forbidden_archive_file`, `archive_member_type`, `archive_file_too_large`, `archive_total_too_large`, `archive_file_count_too_large`, `archive_path_not_allowed`, `release_manifest_missing`, `release_manifest_invalid`, `release_format_unsupported`, `version_invalid`, `data_version_unsupported`, `invalid_manifest_path`, `duplicate_archive_path`, `duplicate_manifest_path`, `manifest_hash_invalid`, `manifest_file_set_mismatch`, `file_hash_mismatch`, `missing_required_file`, `stage_not_found`, `staged_file_changed`, `update_pending`, `database_incompatible`, `database_invalid`, `active_operations`, `invalid_code_path`, `database_backup_invalid`, `apply_verification_failed`, `apply_failed`, `code_changed`, `backup_invalid`, `no_applied_update`, `recovery_required`.
+`paths_must_be_absolute`, `invalid_profile_home`, `invalid_desktop_home`, `invalid_profile_code`, `invalid_profile_data`, `invalid_database`, `invalid_desktop_code`, `path_is_link`, `lock_exists`, `journal_invalid`, `archive_bytes_invalid`, `expected_sha256_invalid`, `archive_too_large`, `archive_checksum_mismatch`, `invalid_archive`, `archive_path_invalid`, `forbidden_archive_file`, `archive_member_type`, `archive_file_too_large`, `archive_total_too_large`, `archive_file_count_too_large`, `archive_path_not_allowed`, `release_manifest_missing`, `release_manifest_invalid`, `release_format_unsupported`, `version_invalid`, `data_version_unsupported`, `invalid_manifest_path`, `duplicate_archive_path`, `duplicate_manifest_path`, `manifest_hash_invalid`, `manifest_file_set_mismatch`, `file_hash_mismatch`, `missing_required_file`, `stage_not_found`, `staged_file_changed`, `update_pending`, `database_incompatible`, `database_invalid`, `active_operations`, `invalid_code_path`, `database_backup_invalid`, `apply_verification_failed`, `apply_failed`, `code_changed`, `backup_invalid`, `no_applied_update`, `recovery_required`, `invalid_reason`, `project_not_found`, `plan_not_unstarted`.
 
 Повторное применение того же staged ID после успешной установки отклоняется как `update_pending`, чтобы не потерять исходную резервную копию. Перед возвратом сверяются все старые файлы резервной копии, их размеры, хеши и безопасные пути. HTTP API сохраняет идентификатор процесса применения: перезагрузка одного модуля не считается перезапуском сервера.
 

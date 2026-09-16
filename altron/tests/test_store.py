@@ -123,6 +123,7 @@ def test_changed_file_blocks_acceptance_and_original_can_be_accepted(sample, api
     target = folder / "result.txt"
     target.write_text("original")
     store.submit_result(pid, run["id"], "Результат", ["result.txt"])
+    store.record_terminal(pid, run["id"], "runtime-one", "complete")
     target.write_text("changed")
     with pytest.raises(api.AltronError, match="artifact_changed"):
         store.accept(pid, tid, "Проверено человеком")

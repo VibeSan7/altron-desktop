@@ -1,6 +1,7 @@
 """Safe, local maintenance for the Altron plugin files."""
 
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
+from datetime import datetime, timezone
 import hashlib
 import gzip
 import io
@@ -407,6 +408,56 @@ class Maintenance:
             _fail("missing_required_file")
         return stage, stage_dir, verified
 
+    @staticmethod
+    def _unstarted_plan(project, task):
+        team = task.get("team")
+        return (task.get("status") == "approved" and isinstance(team, dict) and team.get("status") == "ready"
+                and bool(team.get("steps"))
+                and all(step.get("status") == "pending" and not step.get("run_id") for step in team["steps"])
+                and not any(run.get("task_id") == task["id"] for run in project["runs"]))
+
+    def pending_plans(self):
+        self._validate_installation()
+        try:
+            with closing(sqlite3.connect(self.database.as_uri() + "?mode=ro", uri=True, timeout=10)) as db:
+                if db.execute("PRAGMA user_version").fetchone()[0] != 1:
+                    _fail("database_incompatible")
+                plans = []
+                for (document,) in db.execute("SELECT document FROM altron_projects"):
+                    project = json.loads(document)
+                    for task in project["tasks"]:
+                        if self._unstarted_plan(project, task):
+                            plans.append({"project_id": project["id"], "project_name": project["name"], "task_id": task["id"], "goal": task["goal"], "plan": task["plan"]})
+                return {"plans": plans}
+        except (sqlite3.Error, json.JSONDecodeError, KeyError, TypeError, AttributeError) as exc:
+            _fail("database_invalid", exc)
+
+    def cancel_pending_plan(self, project_id, task_id, reason):
+        if not isinstance(reason, str) or not reason.strip() or len(reason) > 2000:
+            _fail("invalid_reason")
+        with self._lock(self.profile_lock_path):
+            self._validate_installation()
+            if (self._read_journal().get("operation") or {}).get("state") in _OPERATION_STATES:
+                _fail("recovery_required")
+            try:
+                with closing(sqlite3.connect(self.database.as_uri() + "?mode=rw", uri=True, timeout=10)) as db, db:
+                    db.execute("BEGIN IMMEDIATE")
+                    if db.execute("PRAGMA user_version").fetchone()[0] != 1:
+                        _fail("database_incompatible")
+                    row = db.execute("SELECT document FROM altron_projects WHERE id=?", (project_id,)).fetchone()
+                    if row is None:
+                        _fail("project_not_found")
+                    project = json.loads(row[0])
+                    task = next((task for task in project["tasks"] if task["id"] == task_id), None)
+                    if task is None or not self._unstarted_plan(project, task):
+                        _fail("plan_not_unstarted")
+                    task["status"] = task["team"]["status"] = "cancelled"
+                    task["cancellation"] = {"reason": reason.strip(), "at": datetime.now(timezone.utc).isoformat(), "source": "maintenance"}
+                    db.execute("UPDATE altron_projects SET document=? WHERE id=?", (json.dumps(project, ensure_ascii=False), project_id))
+                    return {"task_id": task_id, "status": "cancelled"}
+            except (sqlite3.Error, json.JSONDecodeError, KeyError, TypeError, AttributeError) as exc:
+                _fail("database_invalid", exc)
+
     @contextmanager
     def _validate_database(self):
         if _is_linklike(self.database) or not self.database.is_file():
@@ -427,7 +478,7 @@ class Maintenance:
                 for run in project["runs"]:
                     if not isinstance(run, dict):
                         _fail("database_invalid")
-                    if run.get("status") in {"prepared", "running", "unknown", "cancel_requested"} or (run.get("status") == "reported" and not run.get("terminal_status")):
+                    if run.get("status") in {"prepared", "running", "unknown", "cancel_requested"} or (not run.get("terminal_status") and (run.get("status") == "reported" or run.get("runtime_id"))):
                         _fail("active_operations")
                 for task in project["tasks"]:
                     if not isinstance(task, dict):

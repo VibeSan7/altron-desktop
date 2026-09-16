@@ -3,8 +3,8 @@ import * as sdk from '@hermes/plugin-sdk';
 import {createBootstrapView} from './view.mjs';
 
 export default {
-  id: 'altron-maintenance', name: 'Altron Maintenance', version: '0.3.0-beta.1',
-  description: 'Безопасный переход существующего Altron 0.2 на новую версию.',
+  id: 'altron-maintenance', name: 'Altron Maintenance', version: '0.4.0-beta.1',
+  description: 'Безопасный переход существующего Altron на новую версию.',
   defaultEnabled: false,
   register(ctx) {
     const View = createBootstrapView(React, sdk, ctx);

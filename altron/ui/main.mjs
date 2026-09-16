@@ -6,7 +6,7 @@ import {createCoordinator} from './team.mjs';
 export default {
   id: 'altron',
   name: 'Altron',
-  version: '0.3.0-beta.1',
+  version: '0.4.0-beta.1',
   description: 'Проекты, согласованные задачи, специалисты и проверка результатов.',
   defaultEnabled: false,
   register(ctx) {
