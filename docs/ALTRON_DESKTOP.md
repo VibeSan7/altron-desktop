@@ -1,6 +1,6 @@
 # Altron Desktop 0.5 — interview, work and result
 
-This guide applies to the local **0.5.0-beta.2** candidate. Use its supplied archives and checksums, not the published 0.4 archive. The new default workflow is documented in [Autonomous projects](AUTONOMOUS_PROJECTS.md). See the [verification report](DESKTOP_VERIFICATION.md) for tested scope and limitations.
+This guide applies to public beta **0.5.0-beta.2**. Use its release archives and checksums, not the published 0.4 archive. The new default workflow is documented in [Autonomous projects](AUTONOMOUS_PROJECTS.md). See the [verification report](DESKTOP_VERIFICATION.md) for tested scope and limitations.
 
 The current Altron interface is in Russian. This guide describes its actions in English.
 

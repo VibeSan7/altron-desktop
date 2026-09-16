@@ -6,14 +6,14 @@ Only this README has a separate Russian translation in `README.ru.md`. All other
 
 **From an idea to checked deliverables inside the official Hermes Desktop.**
 
-Development candidate **0.5.0-beta.2** adds **interview → work → result**: describe an idea, answer follow-up questions, approve the resulting contract once, then let the backend execute, check and repair within the agreed limits. This candidate is supplied as local archives; it has not replaced the [published 0.4 release](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1). See the [verification report](docs/DESKTOP_VERIFICATION.md) for actual results and limitations.
+Public beta **0.5.0-beta.2** adds **interview → work → result**: describe an idea, answer follow-up questions, approve the resulting contract once, then let the backend execute, check and repair within the agreed limits. Download the [public beta release](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.5.0-beta.2), and see the [verification report](docs/DESKTOP_VERIFICATION.md) for actual results and limitations.
 
 ## Download and open — no commands required
 
 For a guided first run, use the complete `altron-kit-0.5.0-beta.2.zip`: extract this outer ZIP to read the included [first-run guide](docs/FIRST_RUN.md). Do not extract the inner profile `.tar.gz` files. The kit contains both profile archives, checksums, the English and Russian README, and the usage/update/verification guides. It is not the GitHub Source code ZIP.
 
 1. Install the [official Hermes Desktop](https://hermes-agent.nousresearch.com/docs/user-guide/desktop).
-2. For this candidate, use the supplied **`altron-0.5.0-beta.2.tar.gz`** and matching `SHA256SUMS.txt`, or build the archives from this branch. The public 0.4 archive does not include autonomy. Do not extract the archive or choose GitHub's Source code ZIP.
+2. For this public beta, download the supplied **`altron-0.5.0-beta.2.tar.gz`** and matching `SHA256SUMS.txt` from the release, or build the archives from this branch. The public 0.4 archive does not include autonomy. Do not extract the archive or choose GitHub's Source code ZIP.
 3. In Desktop, use **Import profile** next to the add-profile button and select the archive. This creates a separate `altron` profile, does not replace `default`, and refuses to overwrite an existing profile.
 4. Fully close and reopen Desktop. Enable **Desktop: Altron** in the plugins section, then select **`altron`** in the profile rail. The package configuration already enables the Python component for that profile.
 5. Click **Altron** in Desktop's bottom bar to open its workspace tab. On subsequent starts, select the `altron` profile first as well: this package's backend is not enabled in `default`.

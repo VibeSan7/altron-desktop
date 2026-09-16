@@ -1,6 +1,6 @@
 # Altron Desktop 0.5.0-beta.2 verification
 
-**Status: locally verified candidate, not a finished production release.** This version has not been published. Evidence and exact profile archive checksums: [local-candidate-0.5.0-beta.2.json](evidence/local-candidate-0.5.0-beta.2.json). The [0.4 report](DESKTOP_VERIFICATION_0.4.md) is retained separately; it is not evidence for the autonomous workflow.
+**Status: public beta; not a stable production release.** Published at [v0.5.0-beta.2](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.5.0-beta.2). Evidence and exact profile archive checksums: [public-release-0.5.0-beta.2.json](evidence/public-release-0.5.0-beta.2.json). The [0.4 report](DESKTOP_VERIFICATION_0.4.md) is retained separately; it is not evidence for the autonomous workflow.
 
 ## Checked environment
 
@@ -24,7 +24,7 @@ A mission could outlive its approved time limit while its Hermes session was ini
 
 ## Real Desktop: autonomous protocol
 
-Evidence ID: `aa-8lsMHs`. The main archive hash in the evidence exactly matches the candidate archive.
+Evidence ID: `aa-8lsMHs`. The main archive hash in the evidence exactly matches the public beta archive.
 
 The test used a **scripted loopback model fixture**, real Hermes Desktop, real gateway, real SQLite persistence, and real filesystem/terminal tools. It verified:
 
@@ -48,19 +48,22 @@ This verifies the protocol and implementation, **not the reasoning quality of a 
 - The upgrade harness does not produce the same standalone UI-error log as the other two harnesses; its result is not presented as such a log.
 - Completed Desktop processes exited successfully. Earlier failed attempts are retained locally and are not substituted for these results.
 
+## Clean Windows bootstrap probe
+
+A fresh Windows Sandbox verified WebView2, the Hermes bootstrap installer, official Node.js 22.23.2 installation, a source Desktop build and visible Electron launch, and import of `altron-clean` without replacing `default`. The bootstrap did not install Node or ship a packaged Desktop binary by itself; the source fallback required the official Node.js MSI. Provider login for a new account was not tested.
+
 ## Distribution and security
 
 The profile archives are built from explicit file lists. The outer ZIP contains both profiles, checksums, license/notices, and documentation; it contains no development environment or raw QA profile. Extract the **outer ZIP**, but import the inner `.tar.gz` profiles without extracting them. See [first run](FIRST_RUN.md) and [updating](UPDATING.md).
 
 File checksums prove archive identity, not usefulness or absence of malicious code. Secret-scan findings must be classified against the actual bytes: a checksum finding is accepted only after recalculating the referenced hashes, not merely because it looks hexadecimal. Private profiles, logs, conversations, keys, and databases are not delivery material.
 
-## Remaining release gates
+## Known boundaries for this beta
 
-These are **not completed** and cannot be replaced by more passing fixture tests:
+These scenarios remain outside the evidence and are not replaced by fixture tests:
 
-1. An explicitly authorized autonomous interview-to-result run with a real model and an independently checked useful result. It may consume the connection owner's quota. The existing `test:live` harness covers the secondary manual/task path only.
-2. Installing Hermes and this kit on a clean Windows 11 computer, including a new account's provider login. An isolated profile on the developer's existing installation is not a clean-machine test.
+1. An explicitly authorized autonomous interview-to-result run with a real model and an independently checked useful result. The real-model attempt reached the interview and work stages but stopped at a separate native `execute_code` confirmation; no result was counted as successful.
+2. A clean-machine check of Hermes and this kit is partial: a fresh Windows Sandbox verified WebView2, Hermes bootstrap, official Node.js 22.23.2 installation, source Desktop build/launch, and profile import without replacing `default`. The bootstrap itself did not install Node or ship a packaged Desktop binary. A new account's provider login remains untested.
 3. A first-time user's walkthrough using [FIRST_RUN.md](FIRST_RUN.md), including reporting confusing steps and confirming the actual result.
-4. Explicit authorization for publication and successful remote CI for the exact commit to be published. Local execution of the workflow's build steps is not a GitHub CI run.
 
 No stable-release or universally autonomous claim is made. Closing a workspace tab is supported; closing the whole Desktop stops the executor. A profile is not an operating-system sandbox. Missing access, a permission refusal, exhausted limits, or uncertain runtime state may legitimately block a project rather than produce a false success.
