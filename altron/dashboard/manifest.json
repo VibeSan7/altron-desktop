@@ -1,0 +1,5 @@
+{
+  "name": "altron",
+  "label": "Altron",
+  "api": "plugin_api.py"
+}

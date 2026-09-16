@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/VibeSan7/altron-desktop",
+  "release": "0.3.0-beta.1",
+  "verified_at_utc": "2026-09-16T01:51:18.728225+00:00",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "hermes_source_commit": "d84ece48b8552501660be229797e2d2aa4cee8db",
+  "node_version": "22.23.2",
+  "python_version": "3.11.15",
+  "packages": [
+    {
+      "name": "altron-0.3.0-beta.1.tar.gz",
+      "sha256": "b8b1ada4614cd3d8d96efb7c7b1d5ebd286bb1f9a7b2f9e6dce299a337677c44"
+    },
+    {
+      "name": "altron-maintenance-0.3.0-beta.1.tar.gz",
+      "sha256": "6bf7bc41ff9c5a8cdd9a812613bd59ebacbbd052b9691a57d1b8f4964cb9e1f0"
+    }
+  ],
+  "python_tests": {
+    "tests": 96,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "passed": 95
+  },
+  "javascript_tests": {
+    "passed": 23,
+    "failed": 0
+  },
+  "native_desktop": {
+    "profileArchiveImportedThroughUI": true,
+    "nativeDesktop": true,
+    "realBackend": true,
+    "syntheticProjects": 2,
+    "projectSeparation": true,
+    "approvedPlan": true,
+    "restoredAfterDesktopRestart": true,
+    "invalidProviderRejected": true,
+    "inferenceTested": false,
+    "maintenanceApplyRollbackThroughUI": true,
+    "maintenancePackage": "same-version-reinstall",
+    "databaseAndSettingsPreserved": true,
+    "maintenanceRestartVerified": true
+  },
+  "upgrade": {
+    "passed": true,
+    "realDesktop": true,
+    "oldArchiveSha256": "3eac0d8df9d263332d8059a65353062e813030c3ea0e259d70acf5b655b4cb35",
+    "archiveSha256": "b8b1ada4614cd3d8d96efb7c7b1d5ebd286bb1f9a7b2f9e6dce299a337677c44",
+    "bootstrapArchiveSha256": "6bf7bc41ff9c5a8cdd9a812613bd59ebacbbd052b9691a57d1b8f4964cb9e1f0",
+    "oldProfileImportedThroughUI": true,
+    "maintenanceProfileImportedThroughUI": true,
+    "oldTasksPreserved": true,
+    "newDataPreservedAfterRollback": true,
+    "oldCodeRestoredByteForByte": true,
+    "privateFilesPreserved": [
+      "config.yaml",
+      "SOUL.md",
+      ".env",
+      "auth.json"
+    ],
+    "externalInferenceAuthorized": false,
+    "credentialFilesCopied": false
+  },
+  "real_team": {
+    "passed": true,
+    "model": "gpt-6-astra",
+    "provider": "openai-codex",
+    "launches": 2,
+    "roles": [
+      "technical",
+      "memory"
+    ],
+    "artifact_contents_verified": true,
+    "handoff_sha256_verified": true,
+    "accepted_after_independent_file_assertions": true,
+    "preserved_after_desktop_and_backend_restart": true,
+    "default_config_unchanged": true,
+    "original_desktop_ui_unchanged": true,
+    "separate_reviewer_launched": false,
+    "credential_files_copied": false
+  },
+  "security": {
+    "source_scan_findings": 0,
+    "confirmed_package_secrets": 0,
+    "generated_manifest_false_positives": 2,
+    "classification": "Only generated plugin_api.py SHA-256 fields in release.json; independently recomputed from packaged bytes. No rule disabled."
+  },
+  "limitations": [
+    "Hermes installation on a clean Windows machine is not tested",
+    "New-account provider login is not tested",
+    "Other providers are not tested",
+    "One symlink test skipped locally due to Windows permissions; portable CI tests it separately",
+    "Not an operating-system sandbox or an unattended agent fleet"
+  ]
+}

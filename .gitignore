@@ -1,0 +1,14 @@
+.env
+.env.*
+auth.json
+*.db
+*.db-wal
+*.db-shm
+*.log
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+node_modules/
+dist/
+.hermes/

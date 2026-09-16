@@ -1,0 +1,15 @@
+{
+  "profile": "altron-maintenance",
+  "version": "0.3.0-beta.1",
+  "files": {
+    "altron/bootstrap/__init__.py": "plugins/altron-maintenance/__init__.py",
+    "altron/bootstrap/plugin.yaml": "plugins/altron-maintenance/plugin.yaml",
+    "altron/bootstrap/dashboard.json": "plugins/altron-maintenance/dashboard/manifest.json",
+    "altron/bootstrap/plugin_api.py": "plugins/altron-maintenance/dashboard/plugin_api.py",
+    "altron/dashboard/maintenance.py": "plugins/altron-maintenance/dashboard/maintenance.py",
+    "altron/bootstrap/plugin.js": "desktop-plugins/altron-maintenance/plugin.js",
+    "packaging/maintenance-config.yaml": "config.yaml",
+    "docs/UPDATING.md": "README.md",
+    "LICENSE": "LICENSE"
+  }
+}
