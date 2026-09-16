@@ -4,14 +4,16 @@ English | [Russian](README.ru.md)
 
 Only this README has a separate Russian translation in `README.ru.md`. All other documentation, issue templates, and release notes are in English only.
 
-**Projects, tasks, and verifiable results inside the official Hermes Desktop.**
+**From an idea to checked deliverables inside the official Hermes Desktop.**
 
-Beta **0.4.0-beta.1** takes a goal through to a result, with cancellation, recovery, and revisions within the same task. This is a preview, not a promise of error-free AI. **A new task executed by a real model has not been tested for 0.4**; the successful live test of the earlier 0.3 is not presented as new evidence. See the [verification report](docs/DESKTOP_VERIFICATION.md) for the exact scope.
+Development candidate **0.5.0-beta.2** adds **interview → work → result**: describe an idea, answer follow-up questions, approve the resulting contract once, then let the backend execute, check and repair within the agreed limits. This candidate is supplied as local archives; it has not replaced the [published 0.4 release](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1). See the [verification report](docs/DESKTOP_VERIFICATION.md) for actual results and limitations.
 
 ## Download and open — no commands required
 
+For a guided first run, use the complete `altron-kit-0.5.0-beta.2.zip`: extract this outer ZIP to read the included [first-run guide](docs/FIRST_RUN.md). Do not extract the inner profile `.tar.gz` files. The kit contains both profile archives, checksums, the English and Russian README, and the usage/update/verification guides. It is not the GitHub Source code ZIP.
+
 1. Install the [official Hermes Desktop](https://hermes-agent.nousresearch.com/docs/user-guide/desktop).
-2. Download **`altron-0.4.0-beta.1.tar.gz`** from [release 0.4.0-beta.1](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1). Do not extract it. Do not choose GitHub's Source code ZIP.
+2. For this candidate, use the supplied **`altron-0.5.0-beta.2.tar.gz`** and matching `SHA256SUMS.txt`, or build the archives from this branch. The public 0.4 archive does not include autonomy. Do not extract the archive or choose GitHub's Source code ZIP.
 3. In Desktop, use **Import profile** next to the add-profile button and select the archive. This creates a separate `altron` profile, does not replace `default`, and refuses to overwrite an existing profile.
 4. Fully close and reopen Desktop. Enable **Desktop: Altron** in the plugins section, then select **`altron`** in the profile rail. The package configuration already enables the Python component for that profile.
 5. Click **Altron** in Desktop's bottom bar to open its workspace tab. On subsequent starts, select the `altron` profile first as well: this package's backend is not enabled in `default`.
@@ -19,11 +21,21 @@ Beta **0.4.0-beta.1** takes a goal through to a result, with cancellation, recov
 
 The current Altron interface is in Russian. This documentation describes its actions in English.
 
-Desktop must provide the `host.openWorkspace`, `ctx.rest`, and `host.onEvent` SDK capabilities. Tested build: **Hermes Desktop 0.21.3**, source commit `d84ece48b8552501660be229797e2d2aa4cee8db`; Python 3.11+. Recovery also requires Hermes's runtime registry and cross-process session-ownership checks. If these capabilities are unavailable, Altron keeps the operation blocked rather than assuming execution has stopped.
+Desktop must provide the `host.openWorkspace`, `ctx.rest`, and `host.onEvent` SDK capabilities. Tested build: **Hermes Desktop 0.17.3 with Hermes Agent 0.21.3**, source commit `d84ece48b8552501660be229797e2d2aa4cee8db`; Python 3.11+. Recovery also requires Hermes's runtime registry and cross-process session-ownership checks. If these capabilities are unavailable, Altron keeps the operation blocked rather than assuming execution has stopped.
 
-Details: [installation, usage, and rollback](https://github.com/VibeSan7/altron-desktop/blob/main/docs/ALTRON_DESKTOP.md).
+Details: [installation, usage, and rollback](docs/ALTRON_DESKTOP.md).
 
-## What you can do
+## Autonomous projects
+
+- Start with a need, not a technical specification. Follow-up questions and the proposal are saved.
+- Approve the goal, exclusions, deliverables, checks, folder and limits once.
+- Let the backend continue and repair failed checks across bounded turns, without an open Altron tab.
+- Inspect actual files, native command-check receipts and usage instructions. Automatic readiness is not user acceptance.
+- Request a confirmed stop, reconcile uncertain execution safely, or explicitly authorize a revision.
+
+Keep Hermes Desktop running. This is not a Windows background service; a full shutdown requires recovery. Work/time limits are not spending caps. The beta does not prove week-long unattended reliability or universal reasoning quality. [Full autonomous-project guide](docs/AUTONOMOUS_PROJECTS.md).
+
+## Manual mode remains available
 
 - Create multiple projects with separate folders, tasks, and decisions.
 - Ask Altron to propose a plan or write one yourself.
@@ -42,7 +54,7 @@ Details: [installation, usage, and rollback](https://github.com/VibeSan7/altron-
 - Request a separate review through a separately confirmed run.
 - Open the executor's conversation in Hermes and request a stop.
 - Return to projects after restarting without automatically resubmitting tasks.
-- Verify an update package against its published checksum, create a backup, and restore previous code without replacing current projects or settings.
+- Verify an update package against its published checksum, create a backup, and restore compatible previous code without replacing current projects or settings. Format-1 code cannot be restored over a migrated format-2 database.
 
 **Example:** a project called “Website,” a task to prepare a contact page, and acceptance criteria requiring the page to open and display a phone number and address. First approve the plan, then start the executor. Its file and report are submitted for review; the model saying “done” does not complete the task by itself.
 
@@ -62,15 +74,15 @@ Altron keeps its own database at `altron/altron.db` inside the selected Hermes p
 
 ## What has been tested — and what is not claimed
 
-The [verification report](https://github.com/VibeSan7/altron-desktop/blob/main/docs/DESKTOP_VERIFICATION.md) distinguishes:
+The [verification report](docs/DESKTOP_VERIFICATION.md) distinguishes:
 - tests of data, the HTTP API, tool context, and execution control;
 - real Desktop runs with synthetic projects, restarts, and rejection of an invalid connection;
 - archive construction, contents, and native import without overwriting profiles;
 - automated GitHub checks.
 
-The previously published 0.3 also passed a real task using `openai-codex / gpt-6-astra`: the model created a file and submitted it to Altron, and programmatic checks verified its contents and SHA-256 before acceptance. See the [report](https://github.com/VibeSan7/altron-desktop/blob/main/docs/DESKTOP_VERIFICATION.md) for details and exact limits. This tested the owner's existing connection, not a new account's first login or every provider. Users connect their own accounts and manage availability in Hermes. Teams follow an approved plan rather than running unattended in the background. The beta does not include its own Telegram bridge, automatic migration from the old Registry, a standalone Hermes installer, or distributed infrastructure. Selected agency-agents instructions are adapted to Altron's rules; source and license details are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). A specialist instruction is not a separate tool and does not guarantee response quality.
+The previously published 0.3 also passed a real task using `openai-codex / gpt-6-astra`: the model created a file and submitted it to Altron, and programmatic checks verified its contents and SHA-256 before acceptance. See the [report](docs/DESKTOP_VERIFICATION.md) for details and exact limits. This tested the owner's existing connection, not a new account's first login or every provider. Users connect their own accounts and manage availability in Hermes. Teams follow an approved plan rather than running unattended in the background. The beta does not include its own Telegram bridge, automatic migration from the old Registry, a standalone Hermes installer, or distributed infrastructure. Selected agency-agents instructions are adapted to Altron's rules; source and license details are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). A specialist instruction is not a separate tool and does not guarantee response quality.
 
-Built-in maintenance is available from 0.3 onward. To upgrade from 0.2, or cancel an unstarted plan that blocks an upgrade from 0.3, use the separate `altron-maintenance-0.4.0-beta.1.tar.gz` archive and the [step-by-step upgrade and rollback guide](https://github.com/VibeSan7/altron-desktop/blob/main/docs/UPDATING.md). Do not import the main archive over an existing profile. Installing Hermes on a clean computer and signing into a new account remain outside the verified scenario.
+Built-in maintenance is available from 0.3 onward. To upgrade from 0.2, or cancel an unstarted plan that blocks an upgrade from 0.3, use the separate `altron-maintenance-0.5.0-beta.2.tar.gz` archive and the [step-by-step upgrade and rollback guide](docs/UPDATING.md). Do not import the main archive over an existing profile. Installing Hermes on a clean computer and signing into a new account remain outside the verified scenario.
 
 ## Development
 

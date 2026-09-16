@@ -1,56 +1,66 @@
-# Altron Desktop 0.4.0-beta.1 verification
+# Altron Desktop 0.5.0-beta.2 verification
 
-The archives for **public beta 0.4.0-beta.1** have been verified. Checksums and anonymized results: [public-release-0.4.0-beta.1.json](evidence/public-release-0.4.0-beta.1.json). Verification was completed on September 16, 2026.
+**Status: locally verified candidate, not a finished production release.** This version has not been published. Evidence and exact profile archive checksums: [local-candidate-0.5.0-beta.2.json](evidence/local-candidate-0.5.0-beta.2.json). The [0.4 report](DESKTOP_VERIFICATION_0.4.md) is retained separately; it is not evidence for the autonomous workflow.
 
-The [initial local candidate](evidence/local-candidate-0.4.0-beta.1.json) is retained as a separate historical record: its checksums do not describe the release files. Only the README instructions and corresponding `release.json` checksums changed in the distributed packages; the code is byte-for-byte identical. The new archives themselves passed the Desktop scenarios below again.
+## Checked environment
 
-## Environment and ordinary tests
+- Windows 11, build 26200; Python 3.11.15; Node.js 22.23.2.
+- **Hermes Desktop 0.17.3 with Hermes Agent 0.21.3**, Hermes source commit `d84ece48b8552501660be229797e2d2aa4cee8db`. The Desktop version was read from the running Electron application. Earlier documentation incorrectly called the Agent version the Desktop version.
+- Isolated profile homes, Desktop application data, and synthetic project folders. The ordinary tests do not inherit model credentials or configure the working default profile.
+- These results do not certify other Hermes revisions or operating systems.
 
-- Windows 11, Node.js 22.23.2, Python 3.11.15, Playwright 1.62.1. Hermes Desktop 0.21.3, source commit `d84ece48b8552501660be229797e2d2aa4cee8db`.
-- **114 Python tests passed, 1 skipped:** the process lacked Windows permission to create a symbolic link. The platform was not mocked; this is not a failure of checks against existing ordinary directories.
-- **27 JavaScript tests passed:** model/connection selection, lost acknowledgment, source changes, no hidden retries, team sequencing, new UI controls, and the connection catalog.
-- Tests covered attempt history after reopening SQLite, rejection of late updates to an earlier attempt, required completion before acceptance/revision/archiving, the run limit, and allowed diagnostic contents.
-- A separate test reproduces a session binding changing during recovery: the changed binding is rejected, and a real run is not declared stopped based on a stale observation.
-- Early-failure timing was fixed: duration no longer keeps growing after an error before session binding. An error after binding is not treated as proof that execution stopped.
-- Ordinary tests do not submit the test task to an external model. Without `ALTRON_LIVE=1`, the AI test is skipped; this was also verified.
+## Automated suites
 
-Packages were built by the step in the [workflow](../.github/workflows/altron-desktop.yml). [GitHub Actions 35061350136](https://github.com/VibeSan7/altron-desktop/actions/runs/35061350136) successfully checked commit `d1a192cf02da17781d32bb6083fd0f07783926e6`: **112 portable Python tests with no skips and 27 JavaScript tests**. GitHub archives matched those tested on Windows byte for byte. Publication also requires a successful run for the exact final main commit and matching archive checksums; that run is linked in the [release description](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1).
+- **189 Python tests passed, 1 skipped** in the Hermes environment. The skipped check requires Windows permission to create a symbolic link; that permission was not elevated for testing.
+- **185 portable Python tests passed, 2 skipped.** The second skip is a native Hermes hook integration check because Hermes's `gateway` package is not installed in the portable environment. That test runs in the full Hermes suite. Portable test dependencies also emit two upstream deprecation warnings; they were not hidden.
+- **37 JavaScript tests passed**, including connection selection, state handling, mission UI, and safe manual controls.
+- The live-model test remained skipped with `ALTRON_LIVE=0`; ordinary testing does not authorize inference.
+- `npm audit` reported zero known vulnerabilities. This is not a general security guarantee.
+- Builds and package tests passed. Profiles match their manifests. The handoff ZIP contains the same profiles, checksums, and offline installation/update guides, rather than a different build under the same version.
 
-## Real Desktop, without submitting a task to a model
+## Additional defect fixed in this candidate
 
-In a separate temporary environment with a real Hermes instance, without mocked API responses:
+A mission could outlive its approved time limit while its Hermes session was initializing, then be submitted when initialization finished. Three failing regression cases reproduced this. The coordinator now requests a stop before readiness handling, and the transactional claim checks the deadline again to close the last timing gap. It does not mark an unknown or still-running session stopped just because time expired. The affected controller/execution suite then passed all 27 tests.
 
-- The archive was imported through the native dialog; a project directory was created through Altron's UI.
-- The learning example filled the form but did not automatically create or run a task.
-- Two synthetic projects, data separation, and persistence after restarting were verified.
-- Plan cancellation, reversible archiving, search, revision of the same task, and renewed approval of a team plan were exercised.
-- An invalid connection produced an error state without silently substituting another model. The first `gateway.ready` no longer remounts the panel during launch or leaves a task stuck preparing its run.
-- A real idle Hermes session was created **without `prompt.submit`**. Explicit reconciliation closed it normally and stored exactly one interrupted run; no new task was sent to the model. The task was then archived.
-- Installing the same package and rolling back through the UI were tested, with real restarts and preservation of the database/settings.
-- The final UI-error list was empty. Installed release metadata and the Python API were checked against the current archive.
+## Real Desktop: autonomous protocol
 
-Complete successful run: `an-51ULcj`. Earlier failed runs are retained separately and are not used as readiness evidence.
+Evidence ID: `aa-8lsMHs`. The main archive hash in the evidence exactly matches the candidate archive.
 
-## Upgrades from older versions and rollback
+The test used a **scripted loopback model fixture**, real Hermes Desktop, real gateway, real SQLite persistence, and real filesystem/terminal tools. It verified:
 
-Both scenarios passed separately:
+- No result was created during interview or before project approval.
+- The saved interview survived a full Desktop restart without another model request.
+- Answer drafts survived navigation between modes.
+- Approval errors received focus and were visible at a smaller window size; long text wrapped.
+- One project approval led to a failed first work result and one automatic repair while the mission UI was unmounted.
+- Required command success came from a real terminal receipt, and output contents and file hashes were checked independently.
+- Two single-use native approvals allowed only the exact read-only check command. Project approval did not disable Hermes security.
+- Keyboard focus stayed in the confirmation dialog; Escape dismissed it without cancelling the project.
+- A completed result survived another full Desktop restart without replay or a new request.
+- Runtime errors were collected in **every** imported, working, and reopened window and asserted empty. Earlier evidence that only watched the first import window is not used for this stronger claim.
 
-- **0.2 → 0.4 → rollback to 0.2**, result `upgrade-DDXkMb`.
-- **0.3 → 0.4 → rollback to 0.3**, result `upgrade-1vaVOZ`. An approved, unstarted team plan was created through the old 0.3 UI. The new maintenance panel canceled it only after explicit confirmation and a reason; plan text and steps were preserved, and no runs were created.
+This verifies the protocol and implementation, **not the reasoning quality of a real AI model**. There was no external inference or real user acceptance.
 
-Each scenario verified old tasks, a new decision saved after upgrading, their preservation after rollback, and byte-for-byte restoration of the previous code. Settings and synthetic control `.env`/`auth.json` files were preserved. Real credentials were not copied into these profiles. The `active_operations` check was not disabled: a plan with a created run cannot be canceled through the unstarted-plan operation.
+## Real Desktop: manual workflow and updates
 
-Automation handles Hermes's normal setup-later dialog when restarting. It clicks the provided button rather than deleting the dialog or clicking through it. Initial onboarding is completed explicitly before that wait. No account is connected for the upgrade check.
+- Native UI evidence `an-xJFxcT`: profile import through the native interface, connection catalog, exact selection, folder creation, separate synthetic projects, plan cancellation/revision, reversible archiving, restart persistence, invalid-provider rejection, and same-version maintenance apply/rollback. No external task was submitted. The captured UI-error list was empty.
+- Upgrade evidence `upgrade-LZhijN`: **0.4.0-beta.1 to 0.5.0-beta.2**, preserving old tasks and a new decision, and safely refusing incompatible format-1 rollback after migration to format 2. The current code and both generations of data remained intact. Synthetic control settings/auth files were preserved; real credentials were not copied.
+- The upgrade harness does not produce the same standalone UI-error log as the other two harnesses; its result is not presented as such a log.
+- Completed Desktop processes exited successfully. Earlier failed attempts are retained locally and are not substituted for these results.
 
-## Contents and safety
+## Distribution and security
 
-The main and maintenance packages were built from explicit file lists. They contain no user databases, conversations, `.env`, `auth.json`, or author projects. Packages and source were scanned with Gitleaks 8.30.1. There were no source findings; package scans reported two matches on checksums in generated `release.json` files. **Every** checksum in those manifests was independently recalculated from the included files. These are not keys; scanner rules were not disabled.
+The profile archives are built from explicit file lists. The outer ZIP contains both profiles, checksums, license/notices, and documentation; it contains no development environment or raw QA profile. Extract the **outer ZIP**, but import the inner `.tar.gz` profiles without extracting them. See [first run](FIRST_RUN.md) and [updating](UPDATING.md).
 
-## Evidence boundaries
+File checksums prove archive identity, not usefulness or absence of malicious code. Secret-scan findings must be classified against the actual bytes: a checksum finding is accepted only after recalculating the referenced hashes, not merely because it looks hexadecimal. Private profiles, logs, conversations, keys, and databases are not delivery material.
 
-- For **this 0.4 build**, no new task executed by a real model was tested. The successful live team belongs to the earlier 0.3: [its separate results](evidence/public-release-0.3.0-beta.1.json). An old success is not presented as new evidence.
-- Installing Hermes on a clean computer, a new account's first login, and an independent beginner's walkthrough have not been tested.
-- Support for every provider, model, and operating system, a distributed team, or unattended operation has not been confirmed.
-- Programmatic checks of synthetic files and checksums do not replace human judgment about a result's usefulness.
+## Remaining release gates
 
-This is a verified **beta**, not a promise of a stable production release. See [using the new version](ALTRON_DESKTOP.md), [upgrading and rolling back](UPDATING.md), and [developer test instructions](LIVE_TESTING.md).
+These are **not completed** and cannot be replaced by more passing fixture tests:
+
+1. An explicitly authorized autonomous interview-to-result run with a real model and an independently checked useful result. It may consume the connection owner's quota. The existing `test:live` harness covers the secondary manual/task path only.
+2. Installing Hermes and this kit on a clean Windows 11 computer, including a new account's provider login. An isolated profile on the developer's existing installation is not a clean-machine test.
+3. A first-time user's walkthrough using [FIRST_RUN.md](FIRST_RUN.md), including reporting confusing steps and confirming the actual result.
+4. Explicit authorization for publication and successful remote CI for the exact commit to be published. Local execution of the workflow's build steps is not a GitHub CI run.
+
+No stable-release or universally autonomous claim is made. Closing a workspace tab is supported; closing the whole Desktop stops the executor. A profile is not an operating-system sandbox. Missing access, a permission refusal, exhausted limits, or uncertain runtime state may legitimately block a project rather than produce a false success.

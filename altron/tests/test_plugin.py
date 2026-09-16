@@ -20,6 +20,8 @@ def test_registered_tools_obey_the_real_session_context(tmp_path, installed_altr
     store.bind_run(pid, run["id"], "own-runtime", "own-stored")
     registered = {}
     class Context:
+        def register_hook(self, name, callback):
+            pass
         def register_tool(self, **kwargs):
             registered[kwargs["name"]] = kwargs
     plugin.register(Context())

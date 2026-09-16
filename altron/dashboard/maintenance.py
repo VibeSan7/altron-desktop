@@ -324,7 +324,7 @@ class Maintenance:
             _fail("release_format_unsupported")
         if not isinstance(manifest["version"], str) or not _VERSION.fullmatch(manifest["version"]):
             _fail("version_invalid")
-        if manifest["data_version"] != 1:
+        if type(manifest["data_version"]) is not int or manifest["data_version"] not in (1, 2):
             _fail("data_version_unsupported")
         declared = manifest["files"]
         if not isinstance(declared, dict):
@@ -420,7 +420,7 @@ class Maintenance:
         self._validate_installation()
         try:
             with closing(sqlite3.connect(self.database.as_uri() + "?mode=ro", uri=True, timeout=10)) as db:
-                if db.execute("PRAGMA user_version").fetchone()[0] != 1:
+                if db.execute("PRAGMA user_version").fetchone()[0] not in (1, 2):
                     _fail("database_incompatible")
                 plans = []
                 for (document,) in db.execute("SELECT document FROM altron_projects"):
@@ -442,7 +442,7 @@ class Maintenance:
             try:
                 with closing(sqlite3.connect(self.database.as_uri() + "?mode=rw", uri=True, timeout=10)) as db, db:
                     db.execute("BEGIN IMMEDIATE")
-                    if db.execute("PRAGMA user_version").fetchone()[0] != 1:
+                    if db.execute("PRAGMA user_version").fetchone()[0] not in (1, 2):
                         _fail("database_incompatible")
                     row = db.execute("SELECT document FROM altron_projects WHERE id=?", (project_id,)).fetchone()
                     if row is None:
@@ -466,7 +466,7 @@ class Maintenance:
         try:
             db = sqlite3.connect(self.database, timeout=10)
             db.execute("BEGIN IMMEDIATE")
-            if db.execute("PRAGMA user_version").fetchone()[0] != 1:
+            if db.execute("PRAGMA user_version").fetchone()[0] not in (1, 2):
                 _fail("database_incompatible")
             for (raw_document,) in db.execute("SELECT document FROM altron_projects"):
                 try:
@@ -486,7 +486,19 @@ class Maintenance:
                     team = task.get("team")
                     if isinstance(team, dict) and team.get("status") in {"ready", "running", "paused", "unknown"}:
                         _fail("active_operations")
-            yield
+            if db.execute("PRAGMA user_version").fetchone()[0] == 2:
+                for (document,) in db.execute("SELECT document FROM altron_missions"):
+                    try:
+                        mission = json.loads(document)
+                    except (TypeError, json.JSONDecodeError) as exc:
+                        _fail("database_invalid", exc)
+                    if not isinstance(mission, dict) or not isinstance(mission.get("turns"), list):
+                        _fail("database_invalid")
+                    if mission.get("status") not in {"waiting", "awaiting_approval", "ready", "blocked", "cancelled"}:
+                        _fail("active_operations")
+                    if any(not isinstance(turn, dict) or not turn.get("settled") for turn in mission["turns"]):
+                        _fail("active_operations")
+            yield db
         except sqlite3.Error as exc:
             _fail("database_invalid", exc)
         finally:
@@ -627,9 +639,11 @@ class Maintenance:
                 _fail("code_changed")
 
     def apply(self, stage_id: str):
-        with self._locks(), self._validate_database():
+        with self._locks(), self._validate_database() as db:
             journal = self._read_journal()
             stage, stage_dir, verified = self._stage_files(journal, stage_id)
+            if db.execute("PRAGMA user_version").fetchone()[0] > stage["data_version"]:
+                _fail("database_incompatible")
             if journal.get("operation") and journal["operation"].get("state") in _OPERATION_STATES:
                 _fail("recovery_required")
             previous = journal.get("operation") or {}
@@ -710,7 +724,7 @@ class Maintenance:
         self._write_journal(journal)
 
     def rollback(self):
-        with self._locks(), self._validate_database():
+        with self._locks(), self._validate_database() as db:
             journal = self._read_journal()
             operation = journal.get("operation")
             if not isinstance(operation, dict) or operation.get("state") not in {"applied", "failed", "apply_started", "compensating", "recovery_required"}:
@@ -723,6 +737,14 @@ class Maintenance:
             if not backup_dir.is_dir() or _is_linklike(backup_dir):
                 _fail("backup_invalid")
             self._verify_backup(operation, backup_dir)
+            backup_database = self._validate_chain(backup_dir, "altron.db", "backup_invalid")
+            try:
+                with closing(sqlite3.connect(backup_database.as_uri() + "?mode=ro", uri=True, timeout=10)) as previous_db:
+                    previous_schema = previous_db.execute("PRAGMA user_version").fetchone()[0]
+                if previous_schema != db.execute("PRAGMA user_version").fetchone()[0]:
+                    _fail("database_incompatible")
+            except sqlite3.Error as exc:
+                _fail("backup_invalid", exc)
             if operation.get("state") == "applied":
                 self._verify_rollback_preconditions(operation)
             try:

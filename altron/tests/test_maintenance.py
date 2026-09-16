@@ -218,7 +218,7 @@ def test_apply_rejects_incompatible_or_active_database_state(tmp_path, document)
 
 
 def test_apply_rejects_incompatible_database_version(tmp_path):
-    maintenance, _, _ = _maintenance(tmp_path, user_version=2)
+    maintenance, _, _ = _maintenance(tmp_path, user_version=999)
     staged = maintenance.stage(_valid_archive(), hashlib.sha256(_valid_archive()).hexdigest())
     with pytest.raises(MaintenanceError) as error:
         maintenance.apply(staged["id"])

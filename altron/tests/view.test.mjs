@@ -45,13 +45,13 @@ test('bootstrap requires an explicit target and closed windows', async () => {
   assert.doesNotMatch(html, /Проверить пакет|Установить проверенный пакет/);
 });
 
-test('first screen has real project inputs and no prefilled personal project', async () => {
+test('first screen starts from an idea and keeps manual mode available', async () => {
   let createView;
   try { ({createView} = await import('../ui/view.mjs')); }
   catch { assert.fail('Altron Desktop view is not implemented'); }
   const sdk = {
     Button: 'button', Input: 'input', Textarea: 'textarea',
-    useQuery: () => ({data: {projects: [], selected_project_id: null, workspace_id: 'isolated'}, isLoading: false}),
+    useQuery: ({queryKey}) => ({data: queryKey.includes('workspace') ? {projects: [], selected_project_id: null, workspace_id: 'isolated'} : queryKey.includes('list') ? [] : undefined, isLoading: false}),
     useQueryClient: () => ({invalidateQueries: async () => {}}),
     useValue: atom => atom.get(),
     host: {state: {connectionId: {get: () => 'synthetic-source'}, profile: {get: () => 'synthetic'}, gateway: {get: () => 'open'}, model: {get: () => ''}}, onEvent: () => () => {}, request: async () => { throw new Error('No real model in this UI test'); }},
@@ -59,13 +59,10 @@ test('first screen has real project inputs and no prefilled personal project', a
   const View = createView(React, sdk, {rest: async () => {}, os: {}});
   const html = renderToStaticMarkup(React.createElement(View));
   assert.match(html, /Altron/);
-  assert.match(html, /aria-label="Название проекта"/);
+  assert.match(html, /Что вы хотите получить/);
+  assert.match(html, /Начать интервью/);
+  assert.match(html, /Ручной режим/);
   assert.match(html, /Обслуживание Altron/);
-  assert.match(html, /Контрольная сумма SHA-256/);
-  assert.match(html, /Проверить пакет/);
-  assert.match(html, /Название проекта/);
-  assert.match(html, /Папка проекта/);
-  assert.match(html, /Создать проект/);
-  assert.match(html, /<input(?=[^>]*aria-label="Название проекта")(?=[^>]*value="")[^>]*>/);
-  assert.match(html, /<input(?=[^>]*aria-label="Папка проекта")(?=[^>]*value="")[^>]*>/);
+  assert.doesNotMatch(html, /aria-label="Название проекта"/);
+  assert.match(html, /<textarea[^>]*><\/textarea>/);
 });

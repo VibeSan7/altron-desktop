@@ -8,20 +8,38 @@ const {renderToStaticMarkup} = require('react-dom/server');
 
 const tools = () => import('../ui/workspace-tools.mjs');
 
-test('connection catalog uses profile scope and keeps only safe metadata', async () => {
+test('connection catalog preserves configured endpoints and exact model IDs without private metadata', async () => {
   const {loadConnections} = await tools();
   const calls = [];
   const result = await loadConnections(async (method, params) => {
     calls.push([method, params]);
-    if (method === 'config.get') return {model: 'chosen', provider: 'p', providers: [{id: 'p', label: 'Configured', authenticated: true}, {id: 'q', label: 'Not configured', authenticated: false}]};
-    return {providers: [{slug: 'p', models: ['chosen', 'other'], api_url: 'PRIVATE', key_env: 'PRIVATE'}, {slug: 'q', models: ['q-model']}]};
+    if (method === 'config.get') return {model: 'org/chosen:beta', provider: 'org', providers: [{id: 'custom', label: 'Custom', authenticated: false}]};
+    assert.equal(method, 'model.options');
+    return {model: 'org/chosen:beta', provider: 'custom:local', providers: [
+      {slug: 'custom:local', name: 'Local', authenticated: true, is_user_defined: true, models: ['org/chosen:beta', 'other', 'other'], api_url: 'PRIVATE', key_env: 'PRIVATE'},
+      {slug: 'unconfigured', name: 'Not configured', authenticated: false, models: []},
+    ]};
   }, 'isolated');
-  assert.equal(calls.length, 2);
-  assert.ok(calls.every(([, params]) => params.profile === 'isolated'));
-  assert.ok(calls.every(([method]) => !/submit|create|set/.test(method)));
-  assert.deepEqual(result.current, {model: 'chosen', provider: 'p'});
-  assert.equal(result.providers[0].models.length, 2);
-  assert.ok(!JSON.stringify(result).includes('PRIVATE'));
+  assert.deepEqual(result.current, {model: 'org/chosen:beta', provider: 'custom:local'});
+  assert.deepEqual(result.providers, [
+    {id: 'custom:local', label: 'Local', authenticated: true, models: ['org/chosen:beta', 'other']},
+    {id: 'unconfigured', label: 'Not configured', authenticated: false, models: []},
+  ]);
+  assert.deepEqual(calls, [['model.options', {profile: 'isolated', explicit_only: true, include_unconfigured: true}]]);
+});
+
+test('current connection aliases and uncatalogued models are preserved without a fallback selection', async () => {
+  const {loadConnections} = await tools();
+  const row = {slug: 'custom:local', name: 'Local', aliases: ['local'], authenticated: true, models: ['other']};
+  const load = current => loadConnections(async () => ({...current, providers: [row]}), 'isolated');
+  const named = await load({model: 'org/exact-model:v2', provider: 'local'});
+  assert.deepEqual(named.current, {model: 'org/exact-model:v2', provider: 'local'});
+  assert.deepEqual(named.providers, [{id: 'local', label: 'Local', authenticated: true, models: ['org/exact-model:v2', 'other']}]);
+  const missing = await load({model: '', provider: ''});
+  assert.deepEqual(missing.current, {model: '', provider: ''});
+  assert.deepEqual(missing.providers[0].models, ['other']);
+  assert.equal(missing.providers[0].id, 'custom:local');
+  assert.deepEqual(row.models, ['other']);
 });
 
 test('overview separates archived tasks and never turns unknown cost into zero', async () => {

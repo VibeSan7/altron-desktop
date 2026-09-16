@@ -1,6 +1,7 @@
 {
   "profile": "altron-maintenance",
-  "version": "0.4.0-beta.1",
+  "version": "0.5.0-beta.2",
+  "data_version": 2,
   "files": {
     "altron/bootstrap/__init__.py": "plugins/altron-maintenance/__init__.py",
     "altron/bootstrap/plugin.yaml": "plugins/altron-maintenance/plugin.yaml",

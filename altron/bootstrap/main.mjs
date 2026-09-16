@@ -3,7 +3,7 @@ import * as sdk from '@hermes/plugin-sdk';
 import {createBootstrapView} from './view.mjs';
 
 export default {
-  id: 'altron-maintenance', name: 'Altron Maintenance', version: '0.4.0-beta.1',
+  id: 'altron-maintenance', name: 'Altron Maintenance', version: '0.5.0-beta.2',
   description: 'Безопасный переход существующего Altron на новую версию.',
   defaultEnabled: false,
   register(ctx) {

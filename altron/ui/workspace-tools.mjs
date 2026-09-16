@@ -4,13 +4,12 @@ export const demoTask = {
 };
 
 export async function loadConnections(rpc, profile) {
-  const [config, inventory] = await Promise.all([
-    rpc('config.get', {key: 'provider', profile}), rpc('model.options', {profile}),
-  ]);
-  const providers = (config.providers || []).map(p => ({id: p.id, label: p.label, authenticated: p.authenticated === true,
-    models: [...new Set((inventory.providers || []).find(row => row.slug === p.id)?.models || [])],
+  const inventory = await rpc('model.options', {profile, explicit_only: true, include_unconfigured: true});
+  const current = {model: inventory.model || '', provider: inventory.provider || ''};
+  const providers = (inventory.providers || []).map(p => ({
+    id: current.provider && (p.slug === current.provider || p.name === current.provider || p.aliases?.includes(current.provider)) ? current.provider : p.slug,
+    label: p.name, authenticated: p.authenticated === true, models: [...new Set(p.models || [])],
   }));
-  const current = {model: config.model || '', provider: config.provider || ''};
   const selected = providers.find(p => p.id === current.provider);
   if (selected && current.model && !selected.models.includes(current.model)) selected.models.unshift(current.model);
   return {current, providers};
