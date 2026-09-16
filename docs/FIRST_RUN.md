@@ -1,6 +1,6 @@
 # First run and user acceptance
 
-This is the installation and acceptance path for a new Windows 11 user. Altron is an extension of Hermes Desktop, not a standalone Windows application. The interface is currently Russian. See [verification](DESKTOP_VERIFICATION.md) for the exact tested build and remaining release gates.
+This is the installation and acceptance path for a new Windows 11 user. Altron is an extension of Hermes Desktop, not a standalone Windows application. The interface is currently Russian. See [verification](DESKTOP_VERIFICATION.md) for the exact tested build and known boundaries.
 
 ## Before starting
 
@@ -8,6 +8,7 @@ This is the installation and acceptance path for a new Windows 11 user. Altron i
 - Use your own model connection. Altron includes no shared account or paid quota. Configure provider spending limits with your provider; Altron's work-turn and time limits are not money limits.
 - Choose a new, dedicated folder containing no valuable files. Do not grant production access for this first exercise. A separate profile does not isolate operating-system permissions.
 - Keep Hermes's native security confirmations enabled. Reject unexpected commands or requests for access.
+- If the Hermes bootstrap reports `npm was not found on PATH` or the packaged Desktop binary is missing, install the official Node.js 22 LTS for Windows and run `hermes desktop --source` once. This fallback was required by the clean Windows probe; it does not copy a profile or credentials.
 
 ## Unpack the kit, not the profile
 

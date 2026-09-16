@@ -1,0 +1,182 @@
+{
+  "version": "0.5.0-beta.2",
+  "status": "public_beta_release_candidate",
+  "validated_at": "2026-09-16T21:05:31Z",
+  "publication": "authorized_public_beta_release",
+  "external_inference_authorized_this_invocation": true,
+  "environment": {
+    "python": "3.11.15",
+    "windows_build": "10.0.26200",
+    "hermes_core_commit": "d84ece48b8552501660be229797e2d2aa4cee8db",
+    "hermes_agent": "0.21.3",
+    "node": "v22.23.2",
+    "hermes_desktop": "0.17.3"
+  },
+  "archives": {
+    "altron-0.5.0-beta.2.tar.gz": {
+      "sha256": "077affe38d7989ca3cf9a0f54a74328f37a6cbe4cb1f7a024ac84687b48442b1"
+    },
+    "altron-maintenance-0.5.0-beta.2.tar.gz": {
+      "sha256": "267a8e509dc0b6ca42f182ccfcf0c375e72dd6641381321e8cbfa18a3e890b7a"
+    }
+  },
+  "tests": {
+    "hermes_python": {
+      "tests": 190,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 1,
+      "passed": 189,
+      "skips": [
+        {
+          "test": "test_target_cannot_be_a_link_to_another_directory",
+          "reason": "Creating symlinks requires permission on this host"
+        }
+      ]
+    },
+    "portable_python": {
+      "tests": 187,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 2,
+      "passed": 185,
+      "skips": [
+        {
+          "test": "test_target_cannot_be_a_link_to_another_directory",
+          "reason": "Creating symlinks requires permission on this host"
+        },
+        {
+          "test": "test_native_hooks_bind_interview_receipts_to_runtime_not_model_arguments",
+          "reason": "could not import 'gateway.session_context': No module named 'gateway'"
+        }
+      ]
+    },
+    "javascript": {
+      "tests": 37,
+      "pass": 37,
+      "fail": 0,
+      "skipped": 0
+    },
+    "live_opt_out": {
+      "tests": 1,
+      "pass": 0,
+      "fail": 0,
+      "skipped": 1
+    },
+    "bundle": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    }
+  },
+  "native": {
+    "autonomous": {
+      "evidence_id": "aa-8lsMHs",
+      "result": {
+        "passed": true,
+        "archiveSha256": "077affe38d7989ca3cf9a0f54a74328f37a6cbe4cb1f7a024ac84687b48442b1",
+        "desktopVersion": "0.17.3",
+        "realDesktop": true,
+        "realGateway": true,
+        "realFilesystemTools": true,
+        "deterministicModelFixture": true,
+        "realLanguageModel": false,
+        "externalInference": false,
+        "interviewTurns": 2,
+        "workTurns": 2,
+        "projectApprovedOnceThroughUI": true,
+        "nativeCommandApprovals": 2,
+        "nativeSafetyDisabled": false,
+        "beforeApprovalNoDeliverable": true,
+        "rendererUnmountedDuringWork": true,
+        "automaticRepair": true,
+        "nativeCommandReceiptVerified": true,
+        "noReplayAfterRestart": true,
+        "interviewRestoredAfterRestart": true,
+        "draftRestoredAfterNavigation": true,
+        "errorFocusedAndVisible": true,
+        "escapeDismissesWithoutCancellation": true,
+        "confirmationReceivesFocus": true,
+        "longTextWrapsAt1000px": true,
+        "requests": 21
+      },
+      "ui_errors": []
+    },
+    "manual": {
+      "evidence_id": "an-xJFxcT",
+      "result": {
+        "customConnectionCatalog": true,
+        "exactCurrentSelection": true,
+        "connectionSelectionNoSession": true,
+        "folderCreatedThroughUI": true,
+        "demoDoesNotCreateOrRun": true,
+        "cancellationAndRevision": true,
+        "archiveReversalAndSearch": true,
+        "teamCancelledAndReapproved": true,
+        "profileArchiveImportedThroughUI": true,
+        "nativeDesktop": true,
+        "realBackend": true,
+        "syntheticProjects": 2,
+        "projectSeparation": true,
+        "approvedPlan": true,
+        "restoredAfterDesktopRestart": true,
+        "invalidProviderRejected": true,
+        "inferenceTested": false,
+        "maintenanceApplyRollbackThroughUI": true,
+        "maintenancePackage": "same-version-reinstall",
+        "databaseAndSettingsPreserved": true,
+        "maintenanceRestartVerified": true
+      },
+      "ui_errors": []
+    },
+    "upgrade": {
+      "evidence_id": "upgrade-LZhijN",
+      "result": {
+        "passed": true,
+        "realDesktop": true,
+        "oldArchiveSha256": "3ec387dde4c73c3ae914ad0a18a0a1e28221a095973ec4ba3bb873aa149ba9ca",
+        "archiveSha256": "077affe38d7989ca3cf9a0f54a74328f37a6cbe4cb1f7a024ac84687b48442b1",
+        "bootstrapArchiveSha256": "267a8e509dc0b6ca42f182ccfcf0c375e72dd6641381321e8cbfa18a3e890b7a",
+        "oldProfileImportedThroughUI": true,
+        "legacyUnstartedPlanCancelledThroughUI": true,
+        "maintenanceProfileImportedThroughUI": true,
+        "oldTasksPreserved": true,
+        "newDataPreservedAfterBlockedRollback": true,
+        "incompatibleRollbackBlocked": true,
+        "privateFilesPreserved": [
+          "config.yaml",
+          "SOUL.md",
+          ".env",
+          "auth.json"
+        ],
+        "externalInferenceAuthorized": false,
+        "credentialFilesCopied": false
+      },
+      "ui_errors": null
+    }
+  },
+  "npm_audit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "outstanding_release_gates": [
+    "Owner-authorized real-model autonomous interview/work/verification acceptance",
+    "New-account provider login and independent first-user walkthrough"
+  ],
+  "clean_windows": {
+    "fresh_sandbox": true,
+    "webview2_verified": true,
+    "hermes_bootstrap_completed": true,
+    "official_node_version": "22.23.2",
+    "official_node_msi_sha256": "ce9572ae220c345fbae2340bbb4d084e8ca5e0fe093ee7067d43094ae23be989",
+    "source_desktop_build": true,
+    "desktop_window_visible_to_uia": true,
+    "profile_imported": "altron-clean",
+    "default_replaced": false,
+    "new_provider_login": false
+  }
+}

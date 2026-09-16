@@ -1,6 +1,6 @@
 # Updating Altron and rolling back
 
-This guide targets the local **0.5.0-beta.2** candidate. Use its main archive, maintenance archive and `SHA256SUMS.txt` together. The public 0.4 release is a different build without autonomous missions. The interface is currently Russian; actions are described here in English.
+This guide targets public beta **0.5.0-beta.2**. Use its main archive, maintenance archive and `SHA256SUMS.txt` together. The public 0.4 release is a different build without autonomous missions. The interface is currently Russian; actions are described here in English.
 
 ## Before an upgrade
 
