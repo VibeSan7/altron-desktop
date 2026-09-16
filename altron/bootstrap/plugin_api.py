@@ -81,6 +81,20 @@ def status(service=Depends(get_service)):
     return state
 
 
+class PendingPlanCancellation(ConfirmationInput):
+    reason: str = Field(min_length=1, max_length=2000)
+
+
+@router.get("/targets/{profile}/maintenance/pending-plans")
+def pending_plans(service=Depends(get_service)):
+    return call(service.pending_plans)
+
+
+@router.post("/targets/{profile}/maintenance/pending-plans/{project_id}/{task_id}/cancel")
+def cancel_pending_plan(project_id: str, task_id: str, body: PendingPlanCancellation, service=Depends(get_service)):
+    return call(service.cancel_pending_plan, project_id, task_id, body.reason)
+
+
 @router.post("/targets/{profile}/maintenance/stage")
 def stage(body: StageInput, service=Depends(get_service)):
     archive = Path(body.archive_path)

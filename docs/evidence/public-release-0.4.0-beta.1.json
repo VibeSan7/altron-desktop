@@ -1,0 +1,120 @@
+{
+  "format": 1,
+  "version": "0.4.0-beta.1",
+  "evidence_stage": "pre-publication-validation",
+  "checked_at": "2026-09-16T06:00:41.942761+00:00",
+  "validation_commit": "d1a192cf02da17781d32bb6083fd0f07783926e6",
+  "ci": {
+    "run_id": 35061350136,
+    "url": "https://github.com/VibeSan7/altron-desktop/actions/runs/35061350136",
+    "conclusion": "success",
+    "python_passed": 112,
+    "python_skipped": 0,
+    "javascript_passed": 27,
+    "archives_identical_to_windows_tested_files": true
+  },
+  "packages": {
+    "altron-0.4.0-beta.1.tar.gz": "3ec387dde4c73c3ae914ad0a18a0a1e28221a095973ec4ba3bb873aa149ba9ca",
+    "altron-maintenance-0.4.0-beta.1.tar.gz": "50c3975faf39e4084d70ecd5f0cb274a8880bdfb4a85abcba85b31e3bd20d719"
+  },
+  "windows_python": {
+    "passed": 114,
+    "skipped": 1,
+    "skip_reason": "Host permission for directory symlink is unavailable"
+  },
+  "windows_javascript": {
+    "passed": 27,
+    "failed": 0
+  },
+  "native": {
+    "passed": true,
+    "evidence_id": "an-51ULcj",
+    "folderCreatedThroughUI": true,
+    "demoDoesNotCreateOrRun": true,
+    "cancellationAndRevision": true,
+    "archiveReversalAndSearch": true,
+    "teamCancelledAndReapproved": true,
+    "profileArchiveImportedThroughUI": true,
+    "nativeDesktop": true,
+    "realBackend": true,
+    "syntheticProjects": 2,
+    "projectSeparation": true,
+    "approvedPlan": true,
+    "restoredAfterDesktopRestart": true,
+    "invalidProviderRejected": true,
+    "inferenceTested": false,
+    "maintenanceApplyRollbackThroughUI": true,
+    "maintenancePackage": "same-version-reinstall",
+    "databaseAndSettingsPreserved": true,
+    "maintenanceRestartVerified": true,
+    "installed_release_and_api_match_archive": true,
+    "idle_runtime_recovered_without_prompt": true,
+    "recovered_task_has_one_interrupted_run_and_is_archived": true,
+    "recorded_ui_errors": 0
+  },
+  "upgrades": [
+    {
+      "baseline": "0.2.0",
+      "evidence_id": "upgrade-DDXkMb",
+      "passed": true,
+      "realDesktop": true,
+      "oldArchiveSha256": "3eac0d8df9d263332d8059a65353062e813030c3ea0e259d70acf5b655b4cb35",
+      "archiveSha256": "3ec387dde4c73c3ae914ad0a18a0a1e28221a095973ec4ba3bb873aa149ba9ca",
+      "bootstrapArchiveSha256": "50c3975faf39e4084d70ecd5f0cb274a8880bdfb4a85abcba85b31e3bd20d719",
+      "oldProfileImportedThroughUI": true,
+      "legacyUnstartedPlanCancelledThroughUI": false,
+      "maintenanceProfileImportedThroughUI": true,
+      "oldTasksPreserved": true,
+      "newDataPreservedAfterRollback": true,
+      "oldCodeRestoredByteForByte": true,
+      "privateFilesPreserved": [
+        "config.yaml",
+        "SOUL.md",
+        ".env",
+        "auth.json"
+      ],
+      "externalInferenceAuthorized": false,
+      "credentialFilesCopied": false
+    },
+    {
+      "baseline": "0.3.0-beta.1",
+      "evidence_id": "upgrade-1vaVOZ",
+      "passed": true,
+      "realDesktop": true,
+      "oldArchiveSha256": "b8b1ada4614cd3d8d96efb7c7b1d5ebd286bb1f9a7b2f9e6dce299a337677c44",
+      "archiveSha256": "3ec387dde4c73c3ae914ad0a18a0a1e28221a095973ec4ba3bb873aa149ba9ca",
+      "bootstrapArchiveSha256": "50c3975faf39e4084d70ecd5f0cb274a8880bdfb4a85abcba85b31e3bd20d719",
+      "oldProfileImportedThroughUI": true,
+      "legacyUnstartedPlanCancelledThroughUI": true,
+      "maintenanceProfileImportedThroughUI": true,
+      "oldTasksPreserved": true,
+      "newDataPreservedAfterRollback": true,
+      "oldCodeRestoredByteForByte": true,
+      "privateFilesPreserved": [
+        "config.yaml",
+        "SOUL.md",
+        ".env",
+        "auth.json"
+      ],
+      "externalInferenceAuthorized": false,
+      "credentialFilesCopied": false
+    }
+  ],
+  "fixtures": "Synthetic projects and synthetic .env/auth.json sentinels; no real credential files copied.",
+  "secret_scan": {
+    "tool": "gitleaks 8.30.1",
+    "source_findings": 0,
+    "new_commit_history_findings": 0,
+    "package_findings": 2,
+    "package_finding_classification": "Only SHA-256 values in generated release.json; all file digests independently recomputed; no detector rule disabled."
+  },
+  "runtime_payload_changed_since_local_candidate": false,
+  "package_changes_since_local_candidate": [
+    "README.md",
+    "release.json"
+  ],
+  "external_inference_executed_for_this_version": false,
+  "independent_novice_acceptance": false,
+  "new_account_login_tested": false,
+  "publication_binding": "This record identifies tested archive bytes before publication. Release notes identify the final main commit and its successful CI run; final CI archive hashes must match this record."
+}

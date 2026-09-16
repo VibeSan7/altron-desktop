@@ -1,6 +1,7 @@
 """Altron's own data and API; importing the module never opens user data."""
 
 from contextlib import closing, contextmanager
+from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
 import importlib.util
@@ -71,6 +72,19 @@ def team_steps(steps):
             raise AltronError("invalid_team_step")
         result.append({"role": step["role"], "goal": text(step["goal"], "goal"), "acceptance": text(step["acceptance"], "acceptance")})
     return result
+
+
+def unsettled(run):
+    if run.get("terminal_status"):
+        return False
+    return not (run["status"] == "failed" and not run.get("runtime_id"))
+
+
+def current_task(project, run):
+    task = item(project, "tasks", run["task_id"])
+    if run.get("attempt", 1) != task.get("attempt", 1):
+        raise AltronError("historical_run")
+    return task
 
 
 class Store:
@@ -184,6 +198,109 @@ class Store:
             project["tasks"].append(task)
         return task
 
+    def ensure_settled(self, project, task):
+        if any(unsettled(run) for run in project["runs"] if run["task_id"] == task["id"]):
+            raise AltronError("run_state_unconfirmed")
+
+    def editable(self, task):
+        if task.get("archived"):
+            raise AltronError("task_archived")
+
+    def cancel_task(self, project_id, task_id, reason):
+        reason = text(reason, "reason", 2000)
+        with self.changing(project_id) as (project, _):
+            task = item(project, "tasks", task_id)
+            self.editable(task)
+            self.ensure_settled(project, task)
+            if task["status"] not in {"draft", "approved", "failed", "interrupted", "team_waiting", "unknown"}:
+                raise AltronError("task_not_cancellable")
+            task.update(status="cancelled", cancellation={"reason": reason, "at": now()})
+            if task.get("team"):
+                task["team"]["status"] = "cancelled"
+        return task
+
+    def revise_task(self, project_id, task_id, feedback):
+        feedback = text(feedback, "feedback")
+        with self.changing(project_id) as (project, _):
+            task = item(project, "tasks", task_id)
+            self.editable(task)
+            self.ensure_settled(project, task)
+            if task["status"] not in {"review", "done", "failed", "interrupted", "cancelled"}:
+                raise AltronError("task_not_revisable")
+            attempt = task.get("attempt", 1)
+            snapshot = deepcopy({key: value for key, value in task.items() if key != "attempts"})
+            snapshot.update(attempt=attempt, ended_at=now())
+            task.setdefault("attempts", []).append(snapshot)
+            if task.get("team"):
+                task["proposed_steps"] = [{key: step[key] for key in ("role", "goal", "acceptance")} for step in task["team"]["steps"]]
+            for key in ("team", "specialist_review", "acceptance_review", "approved_at", "cancellation", "recovery"):
+                task.pop(key, None)
+            task.update(attempt=attempt + 1, status="draft", feedback=feedback, artifacts=[], summary="", acceptance_review=None)
+        return task
+
+    def archive_task(self, project_id, task_id, archived):
+        if not isinstance(archived, bool):
+            raise AltronError("invalid_archived")
+        with self.changing(project_id) as (project, _):
+            task = item(project, "tasks", task_id)
+            self.ensure_settled(project, task)
+            if task["status"] not in {"done", "cancelled", "failed", "interrupted"}:
+                raise AltronError("task_not_archivable")
+            task["archived"] = archived
+        return task
+
+    def recover_task(self, project_id, task_id, observe):
+        project = self.project(project_id)
+        task = item(project, "tasks", task_id)
+        active = []
+        for run in project["runs"]:
+            if run["task_id"] != task_id or not unsettled(run):
+                continue
+            with observe(run, project, self.root.parent) as observed:
+                if observed["state"] == "active":
+                    active.append(run["id"])
+                    continue
+                if observed["state"] != "stopped":
+                    raise AltronError("runtime_state_unconfirmed")
+                with self.changing(project_id) as (latest, _):
+                    saved = item(latest, "runs", run["id"])
+                    current = current_task(latest, saved)
+                    if not unsettled(saved):
+                        continue
+                    if any(saved.get(key) != run.get(key) for key in ("runtime_id", "stored_id")):
+                        raise AltronError("runtime_state_changed")
+                    saved.update(terminal_status="interrupted", finished_at=now(), usage=observed.get("usage", {}),
+                                 note="Проверено состояние Hermes: активного выполнения нет. Автоматического повтора нет; проверьте сохранённые файлы.")
+                    if saved["status"] != "reported":
+                        saved["status"] = current["status"] = "interrupted"
+                    elif not current.get("team"):
+                        current["status"] = "draft" if saved["role"] == "altron" else "review"
+                    if "team_step" in saved:
+                        current["team"]["steps"][saved["team_step"]]["status"] = "interrupted"
+                        current["team"]["status"] = "failed"
+                        current["status"] = "interrupted"
+        with self.changing(project_id) as (latest, _):
+            current = item(latest, "tasks", task_id)
+            if current.get("attempt", 1) != task.get("attempt", 1):
+                raise AltronError("historical_run")
+            current["recovery"] = {"at": now(), "active_runs": active}
+            team = current.get("team")
+            if team and not active and team["status"] in {"unknown", "running", "paused"}:
+                if all(step["status"] == "complete" for step in team["steps"]):
+                    team["status"] = current["status"] = "review"
+                elif all(not step["run_id"] or step["status"] == "complete" for step in team["steps"]):
+                    team["status"], current["status"] = "paused", "team_waiting"
+                else:
+                    team["status"], current["status"] = "failed", "interrupted"
+        return current
+
+    def set_budget(self, project_id, remaining):
+        if remaining is not None and (isinstance(remaining, bool) or not isinstance(remaining, int) or not 0 <= remaining <= 10000):
+            raise AltronError("invalid_run_budget")
+        with self.changing(project_id) as (project, _):
+            project["remaining_runs"] = remaining
+        return project
+
     def add_decision(self, project_id, value):
         decision = {"id": uuid4().hex, "text": text(value, "decision"), "created_at": now()}
         with self.changing(project_id) as (project, _):
@@ -194,6 +311,8 @@ class Store:
         plan = text(plan, "plan")
         with self.changing(project_id) as (project, _):
             task = item(project, "tasks", task_id)
+            self.editable(task)
+            self.ensure_settled(project, task)
             if task["status"] != "draft":
                 raise AltronError("task_not_draft")
             task.update(plan=plan, status="approved", approved_at=now())
@@ -216,6 +335,8 @@ class Store:
         plan, steps = text(plan, "plan"), team_steps(steps)
         with self.changing(project_id) as (project, _):
             task = item(project, "tasks", task_id)
+            self.editable(task)
+            self.ensure_settled(project, task)
             if task["status"] != "draft":
                 raise AltronError("task_not_draft")
             approved = []
@@ -231,6 +352,7 @@ class Store:
         with self.changing(project_id) as (project, _):
             task = item(project, "tasks", task_id)
             team = task.get("team")
+            self.editable(task)
             if not team or team["status"] not in {"ready", "paused"}:
                 raise AltronError("team_not_resumable")
             if any(step["run_id"] and step["status"] != "complete" for step in team["steps"]):
@@ -277,7 +399,13 @@ class Store:
         return None
 
     def _prepare(self, project, task, role, model, provider, specialist):
-        run = {"id": uuid4().hex, "task_id": task["id"], "role": role, "model": model, "provider": provider, "specialist": specialist, "status": "prepared", "created_at": now(), "runtime_id": None, "stored_id": None, "note": ""}
+        self.editable(task)
+        self.ensure_settled(project, task)
+        if project.get("remaining_runs") is not None:
+            if project["remaining_runs"] <= 0:
+                raise AltronError("run_budget_exhausted")
+            project["remaining_runs"] -= 1
+        run = {"id": uuid4().hex, "task_id": task["id"], "role": role, "model": model, "provider": provider, "specialist": specialist, "status": "prepared", "created_at": now(), "runtime_id": None, "stored_id": None, "note": "", "attempt": task.get("attempt", 1)}
         project["runs"].append(run)
         task["status"] = "launching"
         return run
@@ -329,7 +457,7 @@ class Store:
             except sqlite3.IntegrityError as exc:
                 raise AltronError("session_already_bound") from exc
             run.update(runtime_id=runtime_id, stored_id=stored_id, status="running")
-            task = item(project, "tasks", run["task_id"])
+            task = current_task(project, run)
             task["status"] = {"altron": "planning", "reviewer": "reviewing"}.get(run["role"], "running")
             if "team_step" in run:
                 task["team"]["steps"][run["team_step"]]["status"] = "running"
@@ -344,7 +472,7 @@ class Store:
                 raise AltronError("session_not_bound")
             project = self._read(db, binding[0])
         run = item(project, "runs", binding[1])
-        task = item(project, "tasks", run["task_id"])
+        task = current_task(project, run)
         return {"project": {key: project[key] for key in ("id", "name", "directory")}, "decisions": project["decisions"], "task": self.task_context(task, run), "run": run}
 
     def propose_plan(self, project_id, run_id, plan, steps=None):
@@ -354,7 +482,7 @@ class Store:
             run = item(project, "runs", run_id)
             if run["role"] != "altron" or run["status"] != "running":
                 raise AltronError("planner_not_running")
-            task = item(project, "tasks", run["task_id"])
+            task = current_task(project, run)
             task.update(plan=plan, status="draft", proposed_steps=proposed)
             run.update(status="reported", note="План предложен; требуется согласование", finished_at=now())
         return task
@@ -392,7 +520,7 @@ class Store:
             artifacts = [self.artifact(project, path) for path in paths]
             if len({a["path"] for a in artifacts}) != len(artifacts):
                 raise AltronError("duplicate_artifact")
-            task = item(project, "tasks", run["task_id"])
+            task = current_task(project, run)
             if "team_step" in run:
                 combined = {a["path"]: a for a in task["artifacts"]}
                 combined.update({a["path"]: a for a in artifacts})
@@ -417,7 +545,7 @@ class Store:
             run = item(project, "runs", run_id)
             if run["role"] != "reviewer" or run["status"] != "running":
                 raise AltronError("reviewer_not_running")
-            task = item(project, "tasks", run["task_id"])
+            task = current_task(project, run)
             self.verify_artifacts(project, task)
             task.update(status="review", specialist_review={"run_id": run_id, "text": summary})
             run.update(status="reported", finished_at=now())
@@ -432,14 +560,16 @@ class Store:
             if run["status"] in {"reported", "failed", "interrupted"}:
                 raise AltronError("run_is_terminal")
             run.update(status=status, note=note)
-            task = item(project, "tasks", run["task_id"])
+            if status == "failed" and not run.get("runtime_id"):
+                run["finished_at"] = now()
+            task = current_task(project, run)
             task["status"] = status
             if "team_step" in run:
                 task["team"]["status"] = "paused" if status == "cancel_requested" else status
                 task["team"]["steps"][run["team_step"]]["status"] = status
         return run
 
-    def record_terminal(self, project_id, run_id, runtime_id, status):
+    def record_terminal(self, project_id, run_id, runtime_id, status, usage=None):
         if status not in {"complete", "error", "interrupted"}:
             raise AltronError("invalid_terminal_status")
         with self.changing(project_id) as (project, _):
@@ -448,7 +578,10 @@ class Store:
                 raise AltronError("session_not_bound")
             if run.get("terminal_status"):
                 return run
+            current_task(project, run)
             run.update(terminal_status=status, finished_at=now())
+            if usage is not None:
+                run["usage"] = desktop_services().clean_usage(usage)
             if status == "error":
                 run["note"] = "Hermes сообщил об ошибке выполнения. Автоматического повтора нет; подробности — в диалоге."
             elif status == "interrupted":
@@ -459,7 +592,7 @@ class Store:
                 run["status"] = "interrupted" if status == "interrupted" else "failed"
                 item(project, "tasks", run["task_id"])["status"] = run["status"]
             if "team_step" in run:
-                task = item(project, "tasks", run["task_id"])
+                task = current_task(project, run)
                 team = task["team"]
                 step = team["steps"][run["team_step"]]
                 if run["status"] == "reported" and status == "complete":
@@ -478,6 +611,8 @@ class Store:
         review = text(review, "review")
         with self.changing(project_id) as (project, _):
             task = item(project, "tasks", task_id)
+            self.editable(task)
+            self.ensure_settled(project, task)
             if task["status"] != "review":
                 raise AltronError("task_not_in_review")
             if task.get("team") and task["team"]["status"] != "review":
@@ -556,6 +691,19 @@ class ReviewInput(Input):
     review: str = Field(min_length=1, max_length=16000)
 
 
+_DESKTOP_SERVICES = None
+
+
+def desktop_services():
+    global _DESKTOP_SERVICES
+    if _DESKTOP_SERVICES is None:
+        spec = importlib.util.spec_from_file_location("altron_desktop_services", Path(__file__).with_name("desktop_services.py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _DESKTOP_SERVICES = module
+    return _DESKTOP_SERVICES
+
+
 def get_maintenance():
     global _MAINTENANCE_MODULE
     from hermes_constants import get_hermes_home
@@ -626,6 +774,18 @@ class ConfirmationInput(Input):
     confirm: Literal[True]
 
 
+class CancelInput(ConfirmationInput):
+    reason: str = Field(min_length=1, max_length=2000)
+
+
+class RevisionInput(ConfirmationInput):
+    feedback: str = Field(min_length=1, max_length=16000)
+
+
+class ArchiveInput(Input):
+    archived: bool
+
+
 class ApplyInput(ConfirmationInput):
     stage_id: str = Field(pattern=r"^[0-9a-f]{32}$")
 
@@ -669,9 +829,43 @@ def rollback_update(body: ConfirmationInput, service=Depends(get_maintenance)):
     return maintenance_call(service.rollback)
 
 
+class FolderInput(Input):
+    parent: str = Field(min_length=1, max_length=4096)
+    name: str = Field(min_length=1, max_length=120)
+
+
+class BudgetInput(ConfirmationInput):
+    remaining: int | None = Field(ge=0, le=10000)
+
+
+@router.get("/folders")
+def list_folders(path: str = ""):
+    return maintenance_call(desktop_services().folders, path)
+
+
+@router.post("/folders")
+def create_folder(body: FolderInput):
+    return maintenance_call(desktop_services().create_folder, body.parent, body.name)
+
+
+@router.get("/diagnostics")
+def diagnostics(store=Depends(get_store)):
+    return desktop_services().diagnostics(store)
+
+
+@router.post("/projects/{project_id}/budget")
+def set_budget(project_id: str, body: BudgetInput, store=Depends(get_store)):
+    return call(store.set_budget, project_id, body.remaining)
+
+
+@router.post("/projects/{project_id}/tasks/{task_id}/recover")
+def recover_task(project_id: str, task_id: str, body: ConfirmationInput, store=Depends(get_store)):
+    return maintenance_call(store.recover_task, project_id, task_id, desktop_services().observe_run)
+
+
 @router.get("/health")
 def health():
-    return {"name": "altron", "version": "0.3.0-beta.1", "data_version": 1, "roles": ROLES}
+    return {"name": "altron", "version": "0.4.0-beta.1", "data_version": 1, "roles": ROLES}
 
 
 @router.get("/specialists")
@@ -726,7 +920,10 @@ def create_project(body: ProjectInput, store=Depends(get_store)):
 
 @router.get("/projects/{project_id}")
 def get_project(project_id: str, store=Depends(get_store)):
-    return call(store.project, project_id)
+    project = call(store.project, project_id)
+    for run in project["runs"]:
+        run["usage"] = desktop_services().run_usage(run, project, store.root.parent)
+    return project
 
 
 @router.post("/projects/{project_id}/decisions")
@@ -737,6 +934,21 @@ def create_decision(project_id: str, body: DecisionInput, store=Depends(get_stor
 @router.post("/projects/{project_id}/tasks")
 def create_task(project_id: str, body: TaskInput, store=Depends(get_store)):
     return call(store.create_task, project_id, body.goal, body.acceptance)
+
+
+@router.post("/projects/{project_id}/tasks/{task_id}/cancel")
+def cancel_task(project_id: str, task_id: str, body: CancelInput, store=Depends(get_store)):
+    return call(store.cancel_task, project_id, task_id, body.reason)
+
+
+@router.post("/projects/{project_id}/tasks/{task_id}/revise")
+def revise_task(project_id: str, task_id: str, body: RevisionInput, store=Depends(get_store)):
+    return call(store.revise_task, project_id, task_id, body.feedback)
+
+
+@router.post("/projects/{project_id}/tasks/{task_id}/archive")
+def archive_task(project_id: str, task_id: str, body: ArchiveInput, store=Depends(get_store)):
+    return call(store.archive_task, project_id, task_id, body.archived)
 
 
 @router.post("/projects/{project_id}/tasks/{task_id}/approve")
@@ -761,7 +973,10 @@ def mark_run(project_id: str, run_id: str, body: RunStatusInput, store=Depends(g
 
 @router.post("/projects/{project_id}/runs/{run_id}/terminal")
 def record_terminal(project_id: str, run_id: str, body: TerminalInput, store=Depends(get_store)):
-    return call(store.record_terminal, project_id, run_id, body.runtime_id, body.status)
+    project = call(store.project, project_id)
+    run = call(item, project, "runs", run_id)
+    usage = desktop_services().run_usage(run, project, store.root.parent)
+    return call(store.record_terminal, project_id, run_id, body.runtime_id, body.status, usage)
 
 
 @router.post("/projects/{project_id}/tasks/{task_id}/accept")

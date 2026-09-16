@@ -33,6 +33,38 @@ def bootstrap(tmp_path):
         yield client, desktop, target
 
 
+def test_unstarted_legacy_plan_is_explicitly_cancelled_without_bypassing_active_runs(bootstrap, tmp_path):
+    from altron.dashboard.plugin_api import Store
+    client, _, profile = bootstrap
+    folder = tmp_path / "project"
+    folder.mkdir()
+    store = Store(profile / "altron")
+    pid = store.create_project("Legacy", str(folder))["id"]
+    tid = store.create_task(pid, "Old approved task", "Keep history")["id"]
+    store.set_team(pid, {"technical": {"model": "m", "provider": "p"}})
+    original = store.approve_team(pid, tid, "Unstarted plan", [{"role": "technical", "goal": "G", "acceptance": "A"}])
+    base = "/targets/existing-altron/maintenance"
+    listing = client.get(base + "/pending-plans")
+    assert listing.status_code == 200
+    assert listing.json()["plans"] == [{"project_id": pid, "project_name": "Legacy", "task_id": tid, "goal": "Old approved task", "plan": "Unstarted plan"}]
+    path = base + f"/pending-plans/{pid}/{tid}/cancel"
+    payload = {"confirm": True, "closed_other_windows": True, "reason": "Cancel before update"}
+    assert client.post(path, json={**payload, "confirm": False}).status_code == 422
+    assert client.post(path, json=payload).status_code == 200
+    saved = store.project(pid)["tasks"][0]
+    assert saved["status"] == saved["team"]["status"] == "cancelled"
+    assert saved["plan"] == original["plan"] and saved["team"]["steps"] == original["team"]["steps"]
+    assert store.project(pid)["runs"] == []
+
+    tid2 = store.create_task(pid, "Another task", "A")["id"]
+    store.approve_team(pid, tid2, "Plan", [{"role": "technical", "goal": "G", "acceptance": "A"}])
+    store.resume_team(pid, tid2)
+    store.next_team_run(pid, tid2)
+    before = store.project(pid)
+    assert client.post(base + f"/pending-plans/{pid}/{tid2}/cancel", json=payload).status_code == 409
+    assert store.project(pid) == before
+
+
 def test_only_existing_altron_profiles_are_offered(bootstrap):
     client, desktop, profile = bootstrap
     unrelated = desktop / "profiles" / "other"

@@ -122,7 +122,7 @@ test(process.env.ALTRON_LIVE_TEAM === '1' ? 'an approved team hands off verified
     await page.getByLabel('Папка проекта', {exact: true}).fill(projectDirectory);
     await page.getByRole('button', {name: 'Создать проект', exact: true}).click();
     await page.getByRole('heading', {name: 'Live acceptance', exact: true}).waitFor();
-    await page.getByText('Подключение ИИ для следующего запуска', {exact: true}).click();
+    await page.getByText('Расширенный ручной ввод', {exact: true}).click();
     await page.getByLabel('Модель', {exact: true}).fill(model);
     await page.getByLabel('Провайдер', {exact: true}).fill(provider);
     await page.getByLabel('Какой результат нужен', {exact: true}).fill(teamMode ? 'Контрольная задача: выполнить два согласованных шага. Первый исполнитель создаёт result.json по input.json; второй читает полученный result.json и создаёт handoff.json с данными и его контрольной суммой. Передавать файлы через altron_update; не менять input.json, настройки, другие проекты. Не использовать сеть, делегацию или установку пакетов. Итог проверит автоматизированная QA-приёмка, не модели.' : 'Контрольная задача: прочитай input.json в папке проекта. Создай result.json с полями marker (точно из входа), count (длина values), total (сумма values). Сначала вызови altron_context, после создания файла передай result.json через altron_update action=result. Не меняй другие файлы, настройки, репозитории или подключения; не используй браузер, внешнюю сеть, делегацию и установку пакетов. Это маленькая проверка передачи реального файла, а не задача разработки Altron.');
@@ -197,6 +197,7 @@ test(process.env.ALTRON_LIVE_TEAM === '1' ? 'an approved team hands off verified
     }
     await page.getByText('Нужна приёмка', {exact: true}).waitFor();
     await page.getByLabel('Что вы проверили по критериям задачи', {exact: true}).fill('Автоматизированная приёмка только искусственной QA-задачи по разрешению владельца: проверены JSON, marker, count, total и SHA-256; модель и провайдер совпали с явно выбранными.');
+    await page.getByLabel('Я открыл файлы и проверил критерии', {exact: true}).check();
     await page.getByRole('button', {name: 'Я проверил результат — принять', exact: true}).click();
     await page.getByText('Принято пользователем', {exact: true}).waitFor();
     const accepted = await readProject();

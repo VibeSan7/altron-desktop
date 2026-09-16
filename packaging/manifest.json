@@ -1,6 +1,6 @@
 {
   "profile": "altron",
-  "version": "0.3.0-beta.1",
+  "version": "0.4.0-beta.1",
   "files": {
     "altron/__init__.py": "plugins/altron/__init__.py",
     "altron/plugin.yaml": "plugins/altron/plugin.yaml",
@@ -9,6 +9,7 @@
     "altron/dashboard/manifest.json": "plugins/altron/dashboard/manifest.json",
     "altron/dashboard/maintenance.py": "plugins/altron/dashboard/maintenance.py",
     "altron/dashboard/plugin_api.py": "plugins/altron/dashboard/plugin_api.py",
+    "altron/dashboard/desktop_services.py": "plugins/altron/dashboard/desktop_services.py",
     "altron/desktop/plugin.js": "desktop-plugins/altron/plugin.js",
     "packaging/profile-config.yaml": "config.yaml",
     "packaging/SOUL.md": "SOUL.md",

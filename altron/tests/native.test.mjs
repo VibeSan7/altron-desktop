@@ -14,7 +14,7 @@ const core = path.resolve(desktop, '../..');
 const manifest = JSON.parse(await fs.readFile('packaging/manifest.json', 'utf8'));
 const archive = path.resolve('dist', `altron-${manifest.version}.tar.gz`);
 
-test('Altron runs in the real Desktop with an empty, isolated profile', {timeout: 180000}, async () => {
+test('Altron runs in the real Desktop with an empty, isolated profile', {timeout: 300000}, async () => {
   await fs.mkdir(path.resolve('.hermes'), {recursive: true});
   const root = await fs.mkdtemp(path.resolve('.hermes/an-'));
   const home = path.join(root, 'localappdata', 'hermes');
@@ -73,17 +73,45 @@ test('Altron runs in the real Desktop with an empty, isolated profile', {timeout
     await page.getByRole('heading', {name: 'Altron', exact: true}).waitFor();
     const alpha = path.join(root, 'Alpha');
     const beta = path.join(root, 'Beta');
-    await fs.mkdir(alpha); await fs.mkdir(beta);
+    await fs.mkdir(beta);
     await page.getByLabel('Название проекта', {exact: true}).fill('Alpha');
-    await page.getByLabel('Папка проекта', {exact: true}).fill(alpha);
+    await page.getByLabel('Папка проекта', {exact: true}).fill(root);
+    await page.getByRole('button', {name: 'Выбрать папку', exact: true}).click();
+    await page.getByRole('dialog', {name: 'Выбор папки проекта', exact: true}).waitFor();
+    await page.getByLabel('Имя новой папки', {exact: true}).fill('Alpha');
+    await page.getByRole('button', {name: 'Создать и выбрать папку', exact: true}).click();
+    await page.getByRole('dialog', {name: 'Выбор папки проекта', exact: true}).waitFor({state: 'hidden'});
+    assert.equal(await page.getByLabel('Папка проекта', {exact: true}).inputValue(), alpha);
+    await fs.access(alpha);
     await page.getByRole('button', {name: 'Создать проект', exact: true}).click();
     await page.getByRole('heading', {name: 'Alpha', exact: true}).waitFor();
+    await page.getByRole('button', {name: 'Заполнить учебный пример', exact: true}).click();
+    assert.match(await page.getByLabel('Какой результат нужен', {exact: true}).inputValue(), /index.html/);
+    assert.equal(await page.locator('article[data-task-id]').count(), 0);
     await page.getByLabel('Какой результат нужен', {exact: true}).fill('Alpha task');
     await page.getByLabel('Как проверить готовность', {exact: true}).fill('Alpha criteria');
     await page.getByRole('button', {name: 'Создать задачу', exact: true}).click();
     await page.getByLabel('План для согласования', {exact: true}).fill('Alpha plan');
     await page.getByRole('button', {name: 'Согласовать план', exact: true}).click();
     await page.getByText('План согласован', {exact: true}).waitFor();
+    await page.getByRole('button', {name: 'Отменить задачу', exact: true}).click();
+    await page.getByLabel('Причина отмены', {exact: true}).fill('Continue later');
+    await page.getByRole('button', {name: 'Подтверждаю изменение задачи', exact: true}).click();
+    await page.getByText('Отменено пользователем', {exact: true}).waitFor();
+    await page.getByRole('button', {name: 'Убрать в архив', exact: true}).click();
+    await page.getByLabel('Показать архив', {exact: true}).check();
+    await page.getByRole('button', {name: 'Вернуть из архива', exact: true}).click();
+    await page.getByLabel('Показать архив', {exact: true}).uncheck();
+    await page.getByRole('button', {name: 'Вернуть на доработку', exact: true}).click();
+    await page.getByLabel('Что исправить', {exact: true}).fill('Keep original task, improve plan');
+    await page.getByRole('button', {name: 'Подтверждаю изменение задачи', exact: true}).click();
+    await page.getByText('Попытка 2', {exact: true}).waitFor();
+    await page.getByLabel('План для согласования', {exact: true}).fill('Alpha revised plan');
+    await page.getByRole('button', {name: 'Согласовать план', exact: true}).click();
+    await page.getByText('План согласован', {exact: true}).waitFor();
+    await page.getByLabel('Поиск задач', {exact: true}).fill('not present');
+    assert.equal(await page.locator('article[data-task-id]').count(), 0);
+    await page.getByLabel('Поиск задач', {exact: true}).fill('');
     await page.getByLabel('Новое решение', {exact: true}).fill('Alpha decision');
     await page.getByRole('button', {name: 'Сохранить решение', exact: true}).click();
     await page.locator('p').filter({hasText: /^Alpha decision$/}).waitFor();
@@ -115,6 +143,15 @@ test('Altron runs in the real Desktop with an empty, isolated profile', {timeout
     }
     await page.getByRole('button', {name: 'Согласовать командный план', exact: true}).click();
     await page.getByRole('button', {name: 'Запустить согласованную команду', exact: true}).waitFor();
+    await page.getByRole('button', {name: 'Отменить задачу', exact: true}).click();
+    await page.getByLabel('Причина отмены', {exact: true}).fill('Cancel approved unstarted team');
+    await page.getByRole('button', {name: 'Подтверждаю изменение задачи', exact: true}).click();
+    await page.getByText('Согласованная команда: Отменена пользователем', {exact: true}).waitFor();
+    await page.getByRole('button', {name: 'Вернуть на доработку', exact: true}).click();
+    await page.getByLabel('Что исправить', {exact: true}).fill('Retain team steps, approve again');
+    await page.getByRole('button', {name: 'Подтверждаю изменение задачи', exact: true}).click();
+    await page.getByRole('button', {name: 'Согласовать командный план', exact: true}).click();
+    await page.getByRole('button', {name: 'Запустить согласованную команду', exact: true}).waitFor();
     await page.getByLabel('Текущий проект', {exact: true}).selectOption({label: 'Alpha'});
     await page.getByText('Alpha task', {exact: true}).waitFor();
     assert.equal(await page.getByText('Beta task', {exact: true}).count(), 0);
@@ -133,7 +170,12 @@ test('Altron runs in the real Desktop with an empty, isolated profile', {timeout
     await page.locator('p').filter({hasText: /^Alpha decision$/}).waitFor();
     await page.getByText('План согласован', {exact: true}).waitFor();
     assert.equal(await page.getByText('Beta task', {exact: true}).count(), 0);
-    await page.getByText('Подключение ИИ для следующего запуска', {exact: true}).click();
+    await page.evaluate(() => {
+      const sdk = window.__HERMES_PLUGIN_SDK__;
+      window.__altronQAEvents = [];
+      sdk.host.onEvent('*', event => window.__altronQAEvents.push({type: event.type, session_id: event.session_id, status: event.payload?.status, gateway: sdk.host.state.gateway.get(), profile: sdk.host.state.profile.get(), connection: sdk.host.state.connectionId.get()}));
+    });
+    await page.getByText('Расширенный ручной ввод', {exact: true}).click();
     await page.getByLabel('Модель', {exact: true}).fill('altron-nonexistent-model');
     await page.getByLabel('Провайдер', {exact: true}).fill('altron-invalid-provider');
     await page.getByRole('button', {name: 'Запустить исполнителя', exact: true}).click();
@@ -150,6 +192,27 @@ test('Altron runs in the real Desktop with an empty, isolated profile', {timeout
     assert.equal(await page.getByText('Ещё не начат', {exact: true}).count(), 1);
     assert.equal(await page.getByRole('button', {name: 'Я проверил результат — принять', exact: true}).count(), 0);
     const profileHome = path.join(home, 'profiles/altron');
+    // An actual idle Hermes runtime, without prompt.submit or model inference.
+    const idleSession = await page.evaluate(async cwd => window.__HERMES_PLUGIN_SDK__.host.request('session.create', {
+      source: 'desktop', profile: 'altron', cwd, title: 'Altron recovery QA', model: 'altron-qa-model', provider: 'openai', close_on_disconnect: false, follow_profile_config: false,
+    }), beta);
+    assert.ok(idleSession.session_id && idleSession.stored_session_id);
+    const seeded = await promisify(execFile)(env.HERMES_DESKTOP_PYTHON, ['-c',
+      'import importlib.util,json,sys; from pathlib import Path; home=Path(sys.argv[1]); spec=importlib.util.spec_from_file_location("qa_altron",home/"plugins/altron/dashboard/plugin_api.py"); api=importlib.util.module_from_spec(spec); spec.loader.exec_module(api); s=api.Store(home/"altron"); pid=next(p["id"] for p in s.projects() if Path(p["directory"])==Path(sys.argv[2])); t=s.create_task(pid,"Recovery observation","No prompt submitted"); s.approve(pid,t["id"],"Observe an idle runtime only"); r=s.prepare_run(pid,t["id"],"technical","altron-qa-model","openai"); s.bind_run(pid,r["id"],sys.argv[3],sys.argv[4]); print(json.dumps({"task_id":t["id"]}))',
+      profileHome, beta, idleSession.session_id, idleSession.stored_session_id], {env, windowsHide: true, encoding: 'utf8'});
+    const recoveryTask = page.locator(`article[data-task-id="${JSON.parse(seeded.stdout).task_id}"]`);
+    await recoveryTask.waitFor();
+    await page.waitForFunction(async id => {
+      const result = await window.__HERMES_PLUGIN_SDK__.host.request('session.active_list', {profile: 'altron'});
+      return result.sessions.some(s => s.id === id && s.status === 'idle');
+    }, idleSession.session_id);
+    await recoveryTask.getByRole('button', {name: 'Проверить и восстановить состояние', exact: true}).click();
+    await recoveryTask.getByRole('button', {name: 'Подтверждаю изменение задачи', exact: true}).click();
+    await recoveryTask.getByText('Выполнение остановлено', {exact: true}).waitFor();
+    const remaining = await page.evaluate(() => window.__HERMES_PLUGIN_SDK__.host.request('session.active_list', {profile: 'altron'}));
+    assert.ok(!remaining.sessions.some(s => s.id === idleSession.session_id));
+    await recoveryTask.getByRole('button', {name: 'Убрать в архив', exact: true}).click();
+    await recoveryTask.waitFor({state: 'hidden'});
     const restartText = 'Полностью закройте Hermes Desktop и откройте снова. Новые задания заблокированы до перезапуска.';
     const reopenMaintenance = async () => {
       try {await page.getByRole('heading', {name: 'Altron', exact: true}).waitFor({state: 'hidden', timeout: 3000});}
@@ -198,10 +261,10 @@ test('Altron runs in the real Desktop with an empty, isolated profile', {timeout
     await page.getByText('Beta task', {exact: true}).waitFor();
     assert.deepEqual(await readProjects(), projectsBefore);
     assert.deepEqual(await fs.readFile(path.join(profileHome, 'config.yaml')), configBefore);
-    await fs.writeFile(path.join(root, 'ui-checks.json'), JSON.stringify({profileArchiveImportedThroughUI: true, nativeDesktop: true, realBackend: true, syntheticProjects: 2, projectSeparation: true, approvedPlan: true, restoredAfterDesktopRestart: true, invalidProviderRejected: true, inferenceTested: false, maintenanceApplyRollbackThroughUI: true, maintenancePackage: 'same-version-reinstall', databaseAndSettingsPreserved: true, maintenanceRestartVerified: true}));
+    await fs.writeFile(path.join(root, 'ui-checks.json'), JSON.stringify({folderCreatedThroughUI: true, demoDoesNotCreateOrRun: true, cancellationAndRevision: true, archiveReversalAndSearch: true, teamCancelledAndReapproved: true, profileArchiveImportedThroughUI: true, nativeDesktop: true, realBackend: true, syntheticProjects: 2, projectSeparation: true, approvedPlan: true, restoredAfterDesktopRestart: true, invalidProviderRejected: true, inferenceTested: false, maintenanceApplyRollbackThroughUI: true, maintenancePackage: 'same-version-reinstall', databaseAndSettingsPreserved: true, maintenanceRestartVerified: true}));
   } finally {
     try {
-      if (page && !page.isClosed()) await fs.writeFile(path.join(root, 'final-dom.json'), JSON.stringify({url: page.url(), text: (await page.locator('body').innerText()).slice(0, 12000), buttons: await page.getByRole('button').allTextContents()}, null, 2));
+      if (page && !page.isClosed()) await fs.writeFile(path.join(root, 'final-dom.json'), JSON.stringify({url: page.url(), text: (await page.locator('body').innerText()).slice(0, 12000), events: await page.evaluate(() => window.__altronQAEvents || []), buttons: await page.getByRole('button').allTextContents()}, null, 2));
       console.log(`Native evidence: ${root}`);
       await fs.writeFile(path.join(root, 'ui-errors.json'), JSON.stringify(uiErrors));
     } finally {
