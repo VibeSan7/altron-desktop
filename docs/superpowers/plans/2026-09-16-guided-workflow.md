@@ -1,7 +1,5 @@
 # Guided Workflow Implementation Plan
 
-English | [Russian](2026-09-16-guided-workflow.ru.md)
-
 > **For agentic workers:** use superpowers:executing-plans. Execute tested slices; do not stop at this plan.
 
 **Goal:** Bring the agreed Altron user workflow to a verified local result.

@@ -8,7 +8,6 @@ body:
         Do not attach .env, auth.json, the database, an entire profile, conversations, or raw logs.
         Altron provides a safe diagnostics panel: its report contains only versions and counts.
         Review and sanitize any additional text and screenshots before publishing them.
-        For Russian, use the [separate Russian form](https://github.com/VibeSan7/altron-desktop/issues/new?template=bug_report.ru.yml).
   - type: input
     id: version
     attributes:

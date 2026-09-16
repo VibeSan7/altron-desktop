@@ -1,7 +1,5 @@
 # Altron: a first useful result without dead ends
 
-English | [Russian](2026-09-16-guided-workflow.ru.md)
-
 ## Agreed outcome
 
 The user approved addressing the gaps identified in the audit: cancellation/recovery, revisions within the same task, understandable onboarding and connection selection, transparent acceptance, task overview/search/archive, usage visibility, and safe diagnostics. The owner's working profile is not changed. This phase implements and verifies the product locally; it does not launch a separate reviewer model or present automated runs as an independent beginner's trial.

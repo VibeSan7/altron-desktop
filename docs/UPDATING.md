@@ -1,10 +1,8 @@
 # Updating Altron and rolling back
 
-English | [Russian](UPDATING.ru.md)
-
 This guide applies to upgrading to **0.4.0-beta.1**. Get the main archive, maintenance archive, and checksums from the same [0.4.0-beta.1 release](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1), not from the earlier 0.3 release.
 
-The current Altron interface is in Russian. Actions are described in English here; see the [Russian version](UPDATING.ru.md) for the corresponding on-screen labels.
+The current Altron interface is in Russian. Actions are described in English here.
 
 ## If Altron is not installed yet
 

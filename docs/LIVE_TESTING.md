@@ -1,7 +1,5 @@
 # Testing with a real model
 
-English | [Russian](LIVE_TESTING.ru.md)
-
 This is an optional developer check, not an end-user installation guide. Ordinary `npm test`, `npm run test:native`, and Python tests do not submit the test task to an external model.
 
 `npm run test:live` is skipped by default. It starts only with `ALTRON_LIVE=1` and explicitly provided model, provider, Hermes directory, and runtime settings. It uses the owner's existing connection and may consume their quota or paid tokens. Do not add it to ordinary CI or run it without the connection owner's permission.

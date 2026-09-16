@@ -1,10 +1,8 @@
 # Altron Desktop 0.4 — first results, revisions, and rollback
 
-English | [Russian](ALTRON_DESKTOP.ru.md)
-
 This guide applies to **0.4.0-beta.1**. Installation archives are available in the [GitHub release](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1). The older 0.3 archive does not contain the new controls described below. See the [verification report](DESKTOP_VERIFICATION.md) for the tested scope of this beta.
 
-The current Altron interface is in Russian. This guide describes its actions in English; the [Russian version](ALTRON_DESKTOP.ru.md) provides the corresponding on-screen labels.
+The current Altron interface is in Russian. This guide describes its actions in English.
 
 ## Installation
 

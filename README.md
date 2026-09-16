@@ -2,7 +2,7 @@
 
 English | [Russian](README.ru.md)
 
-English is the primary language for repository documentation, issue templates, and release notes. Russian translations are kept in separate companion files with links between versions; update both languages together.
+Only this README has a separate Russian translation in `README.ru.md`. All other documentation, issue templates, and release notes are in English only.
 
 **Projects, tasks, and verifiable results inside the official Hermes Desktop.**
 
@@ -17,7 +17,7 @@ Beta **0.4.0-beta.1** takes a goal through to a result, with cancellation, recov
 5. Click **Altron** in Desktop's bottom bar to open its workspace tab. On subsequent starts, select the `altron` profile first as well: this package's backend is not enabled in `default`.
 6. Connect your own model using Hermes's built-in settings. In Altron, select the configured connection and a model from the catalog, or use the action that copies the current Hermes connection. Do not enter keys or passwords in Altron fields.
 
-The current Altron interface is in Russian. This documentation describes actions in English; the [Russian guide](docs/ALTRON_DESKTOP.ru.md) includes the corresponding on-screen labels.
+The current Altron interface is in Russian. This documentation describes its actions in English.
 
 Desktop must provide the `host.openWorkspace`, `ctx.rest`, and `host.onEvent` SDK capabilities. Tested build: **Hermes Desktop 0.21.3**, source commit `d84ece48b8552501660be229797e2d2aa4cee8db`; Python 3.11+. Recovery also requires Hermes's runtime registry and cross-process session-ownership checks. If these capabilities are unavailable, Altron keeps the operation blocked rather than assuming execution has stopped.
 

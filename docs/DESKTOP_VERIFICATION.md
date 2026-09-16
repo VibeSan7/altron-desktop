@@ -1,7 +1,5 @@
 # Altron Desktop 0.4.0-beta.1 verification
 
-English | [Russian](DESKTOP_VERIFICATION.ru.md)
-
 The archives for **public beta 0.4.0-beta.1** have been verified. Checksums and anonymized results: [public-release-0.4.0-beta.1.json](evidence/public-release-0.4.0-beta.1.json). Verification was completed on September 16, 2026.
 
 The [initial local candidate](evidence/local-candidate-0.4.0-beta.1.json) is retained as a separate historical record: its checksums do not describe the release files. Only the README instructions and corresponding `release.json` checksums changed in the distributed packages; the code is byte-for-byte identical. The new archives themselves passed the Desktop scenarios below again.

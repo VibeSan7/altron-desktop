@@ -1,7 +1,5 @@
 # Altron maintenance contract
 
-English | [Russian](MAINTENANCE_CONTRACT.ru.md)
-
 `altron.dashboard.maintenance` is a standalone module using only the Python standard library. It does not import `plugin_api.py`, configuration, or credentials.
 
 ## API

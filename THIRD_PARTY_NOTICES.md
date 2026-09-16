@@ -1,7 +1,5 @@
 # Third-party notices
 
-English | [Russian](THIRD_PARTY_NOTICES.ru.md)
-
 Altron includes a small adapted and translated selection of instructions from
 [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents), pinned
 to commit `6d29a9b08785a0e49ffc9818bbdd381164c2df5f`.
