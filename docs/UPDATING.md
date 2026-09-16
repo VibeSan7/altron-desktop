@@ -1,44 +1,46 @@
-# Обновление Altron и возврат
+# Updating Altron and rolling back
 
-Инструкция относится к обновлению до **0.4.0-beta.1**. Берите основной архив, архив обслуживания и контрольные суммы из одного [выпуска 0.4.0-beta.1](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1), а не из прежнего выпуска 0.3.
+This guide applies to upgrading to **0.4.0-beta.1**. Get the main archive, maintenance archive, and checksums from the same [0.4.0-beta.1 release](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1), not from the earlier 0.3 release.
 
-## Если Altron ещё не установлен
+The current Altron interface is in Russian. Actions are described in English here.
 
-Импортируйте основной архив `altron-0.4.0-beta.1.tar.gz` по [инструкции установки](ALTRON_DESKTOP.md). Архив `altron-maintenance-0.4.0-beta.1.tar.gz` для первой установки не нужен. Архивы не распаковывайте.
+## If Altron is not installed yet
 
-## Переход с Altron 0.2 или 0.3 через отдельный профиль
+Import the main `altron-0.4.0-beta.1.tar.gz` archive using the [installation guide](ALTRON_DESKTOP.md). The `altron-maintenance-0.4.0-beta.1.tar.gz` archive is not needed for a first installation. Do not extract the archives.
 
-У версии 0.2 нет встроенного обновления. В 0.3 обновление может блокировать согласованный, но ни разу не запущенный командный план. Для этих случаев предусмотрен отдельный профиль обслуживания. **Не импортируйте новый Altron поверх существующего профиля** и не заменяйте его папку вручную.
+## Upgrading from Altron 0.2 or 0.3 through a separate profile
 
-1. Завершите задания Altron. Скопируйте папку существующего профиля в отдельную резервную папку средствами Проводника. Не публикуйте эту копию: она может содержать ваши подключения и историю.
-2. Скачайте из одного [публичного выпуска GitHub](https://github.com/VibeSan7/altron-desktop/releases) основной архив `altron-0.4.0-beta.1.tar.gz`, архив `altron-maintenance-0.4.0-beta.1.tar.gz` и `SHA256SUMS.txt`. Приглашение и вход в GitHub для скачивания не нужны.
-3. В Hermes Desktop нажмите **Импортировать профиль…** и выберите архив **altron-maintenance**. Это отдельный профиль без ИИ-инструментов и без ваших учётных данных. Он не заменяет старый профиль Altron. Если профиль обслуживания уже существует, импортируйте новый под другим свободным именем; не перезаписывайте прежний профиль.
-4. Полностью закройте все окна Hermes Desktop. Откройте Desktop снова и выберите импортированный профиль обслуживания. Не открывайте старый Altron в другом окне во время обслуживания.
-5. В **Возможности → Плагины** включите **Desktop: Altron Maintenance**, затем нажмите **Обновление Altron**.
-6. В списке **Профиль для обновления** явно выберите существующий профиль Altron. Название может отличаться от `altron`. Панель не принимает произвольные пути и не выбирает профиль за вас.
-7. Подтвердите **Я полностью закрыл остальные окна Hermes**. Если показаны согласованные планы, которые ещё не запускались, прочитайте нужный план, нажмите **Отменить этот незапущенный план**, укажите причину и отдельно подтвердите отмену. План и шаги сохраняются. Ни один исполнитель при этом не останавливается и новое задание не отправляется. План с хотя бы одним созданным запуском эта операция не меняет.
-8. Раскройте **Обслуживание Altron**. Укажите полный путь к **основному** архиву Altron, например полученный через «Копировать как путь» в Проводнике, без внешних кавычек. Из `SHA256SUMS.txt` скопируйте только 64 символа напротив имени этого архива. Контрольная сумма проверяет целостность скачанного файла; она не заменяет доверие к источнику выпуска.
-9. Нажмите **Проверить пакет**. Сверьте показанную версию. Нажмите **Установить проверенный пакет**, затем **Подтверждаю обслуживание**. До замены создаются копия базы Altron и копия затрагиваемого кода.
-10. После сообщения об установке полностью закройте Desktop и откройте снова. Выберите прежний профиль Altron и откройте **Altron**. Проверьте проекты и задачи. Модели и подключения заново задавать не нужно: их файлы не заменяются. Отменённую задачу можно вернуть на доработку уже в новой версии.
+Version 0.2 has no built-in updater. In 0.3, an approved team plan that has never started may block an update. A separate maintenance profile handles these cases. **Do not import a new Altron archive over an existing profile** or manually replace the profile directory.
 
-Изменяется код интерфейса Altron, общий для профилей этого компьютера, и код Altron в выбранном профиле. Проекты, база, `.env`, `auth.json`, `config.yaml`, `SOUL.md`, история Hermes и посторонние плагины не заменяются. Явная отмена из шага 7 меняет только состояние выбранной незапущенной задачи и добавляет запись о причине. Активные или неподтверждённые запуски по-прежнему блокируют обновление. Пауза командной задачи тоже считается незавершённой работой.
+1. Finish Altron's tasks. Use File Explorer to copy the existing profile directory to a separate backup directory. Do not publish this copy: it may contain your connections and history.
+2. From one [public GitHub release](https://github.com/VibeSan7/altron-desktop/releases), download the main `altron-0.4.0-beta.1.tar.gz` archive, `altron-maintenance-0.4.0-beta.1.tar.gz`, and `SHA256SUMS.txt`. Downloading requires neither an invitation nor a GitHub login.
+3. Use Hermes Desktop's profile-import action and select the **altron-maintenance** archive. This is a separate profile without AI tools or your credentials. It does not replace the existing Altron profile. If a maintenance profile already exists, import the new one under a different unused name; do not overwrite the previous profile.
+4. Fully close every Hermes Desktop window. Reopen Desktop and select the imported maintenance profile. Do not open the old Altron in another window during maintenance.
+5. Enable **Desktop: Altron Maintenance** in the plugins section, then open the Altron update panel.
+6. Explicitly select the existing Altron profile in the update-target list. Its name may differ from `altron`. The panel does not accept arbitrary paths or choose a profile for you.
+7. Confirm that all other Hermes windows are fully closed. If approved plans that have never started are listed, read the relevant plan, choose to cancel that unstarted plan, enter a reason, and confirm cancellation separately. The plan and steps are preserved. This does not stop an executor or submit another task. This action does not change a plan that has any created run.
+8. Expand Altron maintenance. Enter the full path to the **main** Altron archive, for example using File Explorer's copy-as-path action, without the surrounding quotation marks. From `SHA256SUMS.txt`, copy only the 64 characters next to that archive's name. The checksum verifies the downloaded file's integrity; it does not replace trust in the release source.
+9. Check the package and verify the displayed version. Choose to install the verified package, then confirm maintenance. A backup of Altron's database and the affected code is created before replacement.
+10. After installation is reported, fully close and reopen Desktop. Select the previous Altron profile and open **Altron**. Check its projects and tasks. Models and connections do not need to be configured again: their files are not replaced. In the new version, a canceled task can be returned for revision.
 
-## Последующие обновления
+This changes Altron's UI code shared by profiles on the computer and Altron's code within the selected profile. Projects, the database, `.env`, `auth.json`, `config.yaml`, `SOUL.md`, Hermes history, and unrelated plugins are not replaced. Explicit cancellation in step 7 changes only the selected unstarted task's state and adds a record of the reason. Active or unconfirmed runs still block updates. A paused team task also counts as unfinished work.
 
-Если нет незавершённых заданий, в Altron 0.3 или новее можно открыть **Обслуживание Altron** в самом Altron. Выберите основной архив следующего совместимого выпуска, укажите его контрольную сумму и выполните проверку, подтверждение и полный перезапуск. Не используйте архив обслуживания в качестве основного обновления.
+## Subsequent updates
 
-## Возврат к предыдущему коду
+If there are no unfinished tasks, Altron 0.3 or later can open its own maintenance panel. Select the main archive of the next compatible release, enter its checksum, and complete verification, confirmation, and a full restart. Do not use the maintenance archive as the main update package.
 
-1. Завершите задания. Полностью закройте остальные окна Hermes.
-2. Откройте **Обслуживание Altron → Вернуть предыдущий код → Подтверждаю обслуживание**.
-3. Полностью закройте Desktop и запустите его заново. Сверьте проекты и результаты.
+## Restoring previous code
 
-Возврат восстанавливает код, а не старую копию базы: новые данные проектов сохраняются при совместимом формате. Старый интерфейс не показывает функции более новой версии. В частности, после возврата к 0.2 команды и панель обслуживания недоступны; после возврата к 0.3 недоступны новые элементы отмены и доработки. Для повторного обновления используйте сохранённый профиль обслуживания.
+1. Finish tasks and fully close all other Hermes windows.
+2. In Altron maintenance, choose to restore the previous code, then confirm maintenance.
+3. Fully close and restart Desktop. Check projects and results.
 
-Если основной интерфейс не открывается, ту же операцию можно выполнить в профиле обслуживания, выбрав нужный профиль. Откат при повреждённой копии, чужом изменении кода или незавершённой работе запрещён.
+Rollback restores code, not an old database copy: newer project data is retained when the format is compatible. An older UI does not display newer features. In particular, rolling back to 0.2 removes access to teams and the maintenance panel; rolling back to 0.3 removes the new cancellation and revision controls. Use the saved maintenance profile to upgrade again.
 
-Резервные копии находятся в папке выбранного профиля: `altron/maintenance/backups/`. Не удаляйте файлы блокировок вручную и не восстанавливайте базу поверх текущей без выяснения причины. Сохраните профиль и журнал `altron/maintenance/journal.json` для диагностики; перед передачей проверьте журнал на личные пути.
+If the main UI will not open, perform the same operation from the maintenance profile after selecting the target profile. Rollback is blocked if its backup is damaged, the code has been changed elsewhere, or work is unfinished.
 
-## Ограничения
+Backups are stored inside the selected profile at `altron/maintenance/backups/`. Do not delete lock files manually or restore a database over the current one without investigating the cause. Preserve the profile and `altron/maintenance/journal.json` for diagnosis; check the journal for personal paths before sharing it.
 
-Обслуживание не устанавливает и не обновляет сам Hermes. Оно не останавливает другие окна и фоновые процессы за пользователя: закрытие остальных окон — обязательный шаг. Проверки конкретного выпуска и их ограничения описаны в [отчёте](DESKTOP_VERIFICATION.md).
+## Limitations
+
+Maintenance does not install or update Hermes itself. It does not close other windows or background processes for you: closing the other windows is mandatory. See the [verification report](DESKTOP_VERIFICATION.md) for the tested scenarios and limitations of a specific release.

@@ -1,56 +1,56 @@
-# Проверка Altron Desktop 0.4.0-beta.1
+# Altron Desktop 0.4.0-beta.1 verification
 
-Проверены архивы для **публичной беты 0.4.0-beta.1**. Контрольные суммы и обезличенные результаты: [public-release-0.4.0-beta.1.json](evidence/public-release-0.4.0-beta.1.json). Проверка завершена 16 сентября 2026 года.
+The archives for **public beta 0.4.0-beta.1** have been verified. Checksums and anonymized results: [public-release-0.4.0-beta.1.json](evidence/public-release-0.4.0-beta.1.json). Verification was completed on September 16, 2026.
 
-[Первоначальный локальный кандидат](evidence/local-candidate-0.4.0-beta.1.json) сохранён как отдельная историческая запись: его суммы не относятся к файлам выпуска. В поставляемых пакетах изменились только инструкции README и соответствующие суммы в release.json; код совпадает побайтово. Именно новые архивы заново прошли сценарии Desktop ниже.
+The [initial local candidate](evidence/local-candidate-0.4.0-beta.1.json) is retained as a separate historical record: its checksums do not describe the release files. Only the README instructions and corresponding `release.json` checksums changed in the distributed packages; the code is byte-for-byte identical. The new archives themselves passed the Desktop scenarios below again.
 
-## Среда и обычные тесты
+## Environment and ordinary tests
 
-- Windows 11, Node.js 22.23.2, Python 3.11.15, Playwright 1.62.1. Hermes Desktop 0.21.3, исходники `d84ece48b8552501660be229797e2d2aa4cee8db`.
-- **114 Python-тестов прошли, 1 пропущен**: у процесса нет разрешения Windows на создание символической ссылки. Платформа не подменялась; это не падение проверки существующих обычных каталогов.
-- **27 JavaScript-тестов прошли**: выбранная модель/подключение, потеря подтверждения, смена источника, отсутствие скрытого повтора, последовательность команды, новые элементы интерфейса и каталог подключений.
-- Проверены история попыток после повторного открытия SQLite, запрет поздних изменений прежней попытки, обязательное завершение перед приёмкой/доработкой/архивированием, лимит запусков и разрешённый состав диагностики.
-- Отдельный тест воспроизводит привязку сеанса во время восстановления: изменившаяся привязка отклоняется, реальный запуск не объявляется остановленным по устаревшему наблюдению.
-- Исправлено время раннего отказа: длительность больше не продолжает расти после ошибки до привязки сеанса. Ошибка после привязки не выдаётся за подтверждение остановки.
-- Обычные тесты не отправляют контрольное задание внешней модели. Без `ALTRON_LIVE=1` проверка с ИИ пропускается; это также проверено.
+- Windows 11, Node.js 22.23.2, Python 3.11.15, Playwright 1.62.1. Hermes Desktop 0.21.3, source commit `d84ece48b8552501660be229797e2d2aa4cee8db`.
+- **114 Python tests passed, 1 skipped:** the process lacked Windows permission to create a symbolic link. The platform was not mocked; this is not a failure of checks against existing ordinary directories.
+- **27 JavaScript tests passed:** model/connection selection, lost acknowledgment, source changes, no hidden retries, team sequencing, new UI controls, and the connection catalog.
+- Tests covered attempt history after reopening SQLite, rejection of late updates to an earlier attempt, required completion before acceptance/revision/archiving, the run limit, and allowed diagnostic contents.
+- A separate test reproduces a session binding changing during recovery: the changed binding is rejected, and a real run is not declared stopped based on a stale observation.
+- Early-failure timing was fixed: duration no longer keeps growing after an error before session binding. An error after binding is not treated as proof that execution stopped.
+- Ordinary tests do not submit the test task to an external model. Without `ALTRON_LIVE=1`, the AI test is skipped; this was also verified.
 
-Пакеты собраны шагом из [workflow](../.github/workflows/altron-desktop.yml). [GitHub Actions 35061350136](https://github.com/VibeSan7/altron-desktop/actions/runs/35061350136) успешно проверил коммит `d1a192cf02da17781d32bb6083fd0f07783926e6`: **112 переносимых Python-тестов без пропусков и 27 JavaScript-тестов**. Архивы из GitHub побайтово совпали с испытанными в Windows. Перед выпуском также требуется успешный прогон точного итогового коммита main и совпадение сумм его архивов; ссылка на этот прогон приводится в описании [выпуска](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1).
+Packages were built by the step in the [workflow](../.github/workflows/altron-desktop.yml). [GitHub Actions 35061350136](https://github.com/VibeSan7/altron-desktop/actions/runs/35061350136) successfully checked commit `d1a192cf02da17781d32bb6083fd0f07783926e6`: **112 portable Python tests with no skips and 27 JavaScript tests**. GitHub archives matched those tested on Windows byte for byte. Publication also requires a successful run for the exact final main commit and matching archive checksums; that run is linked in the [release description](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1).
 
-## Настоящий Desktop, без задания модели
+## Real Desktop, without submitting a task to a model
 
-В отдельном временном окружении и настоящем Hermes, без подмены ответов API:
+In a separate temporary environment with a real Hermes instance, without mocked API responses:
 
-- Архив импортирован штатным диалогом; папка проекта создана через интерфейс Altron.
-- Учебный пример заполняет форму, но не создаёт задачу и не запускает её автоматически.
-- Проверены два искусственных проекта, разделение данных и сохранение после перезапуска.
-- Выполнены отмена плана, обратимый архив, поиск, доработка той же задачи и повторное согласование командного плана.
-- Неверное подключение даёт состояние ошибки, без скрытой замены модели. Первый `gateway.ready` больше не пересоздаёт панель посреди запуска и не оставляет задачу в «Подготовке запуска».
-- Создан настоящий неработающий сеанс Hermes **без `prompt.submit`**. Явная сверка закрыла его штатно и сохранила ровно один прерванный запуск; новую задачу модели не отправляли. После этого задача помещена в архив.
-- Выполнены установка того же пакета и возврат через интерфейс, с настоящими перезапусками и сохранением базы/настроек.
-- Итоговый список ошибок интерфейса пуст. Установленные метаданные выпуска и Python API сверены с текущим архивом.
+- The archive was imported through the native dialog; a project directory was created through Altron's UI.
+- The learning example filled the form but did not automatically create or run a task.
+- Two synthetic projects, data separation, and persistence after restarting were verified.
+- Plan cancellation, reversible archiving, search, revision of the same task, and renewed approval of a team plan were exercised.
+- An invalid connection produced an error state without silently substituting another model. The first `gateway.ready` no longer remounts the panel during launch or leaves a task stuck preparing its run.
+- A real idle Hermes session was created **without `prompt.submit`**. Explicit reconciliation closed it normally and stored exactly one interrupted run; no new task was sent to the model. The task was then archived.
+- Installing the same package and rolling back through the UI were tested, with real restarts and preservation of the database/settings.
+- The final UI-error list was empty. Installed release metadata and the Python API were checked against the current archive.
 
-Полный успешный прогон: `an-51ULcj`. Ранние упавшие прогоны сохранены отдельно и не используются как доказательство готовности.
+Complete successful run: `an-51ULcj`. Earlier failed runs are retained separately and are not used as readiness evidence.
 
-## Обновление со старых версий и возврат
+## Upgrades from older versions and rollback
 
-Отдельно прошли оба сценария:
+Both scenarios passed separately:
 
-- **0.2 → 0.4 → возврат к 0.2**, результат `upgrade-DDXkMb`.
-- **0.3 → 0.4 → возврат к 0.3**, результат `upgrade-1vaVOZ`. В старой 0.3 через интерфейс создан согласованный незапущенный командный план. Новая панель обслуживания отменила его только после явного подтверждения и причины; текст плана и шаги сохранены, исполнения не созданы.
+- **0.2 → 0.4 → rollback to 0.2**, result `upgrade-DDXkMb`.
+- **0.3 → 0.4 → rollback to 0.3**, result `upgrade-1vaVOZ`. An approved, unstarted team plan was created through the old 0.3 UI. The new maintenance panel canceled it only after explicit confirmation and a reason; plan text and steps were preserved, and no runs were created.
 
-В каждом случае проверены старые задачи, новое решение после обновления, их сохранение после возврата и побайтовое восстановление прежнего кода. Настройки и искусственные контрольные `.env`/`auth.json` сохранены. Настоящие учётные данные в эти профили не копировались. Проверка `active_operations` не отключалась: план с созданным запуском нельзя отменить через операцию для незапущенных планов.
+Each scenario verified old tasks, a new decision saved after upgrading, their preservation after rollback, and byte-for-byte restoration of the previous code. Settings and synthetic control `.env`/`auth.json` files were preserved. Real credentials were not copied into these profiles. The `active_operations` check was not disabled: a plan with a created run cannot be canceled through the unstarted-plan operation.
 
-Автоматизация учитывает штатное окно «Выберу провайдера позже» при повторном старте Hermes. Она нажимает эту кнопку, а не удаляет окно и не кликает сквозь него. Учётная запись для проверки обновления не подключается.
+Automation handles Hermes's normal setup-later dialog when restarting. It clicks the provided button rather than deleting the dialog or clicking through it. Initial onboarding is completed explicitly before that wait. No account is connected for the upgrade check.
 
-## Состав и безопасность
+## Contents and safety
 
-Основной пакет и пакет обслуживания собраны по явным спискам. В них нет пользовательских баз, переписок, `.env`, `auth.json` или проектов автора. Пакеты и исходники проверены Gitleaks 8.30.1. В исходниках находок нет; в пакетах — два срабатывания на контрольные суммы в сгенерированных `release.json`. **Все** суммы этих манифестов независимо пересчитаны по включённым файлам. Это не ключи; правила сканера не отключались.
+The main and maintenance packages were built from explicit file lists. They contain no user databases, conversations, `.env`, `auth.json`, or author projects. Packages and source were scanned with Gitleaks 8.30.1. There were no source findings; package scans reported two matches on checksums in generated `release.json` files. **Every** checksum in those manifests was independently recalculated from the included files. These are not keys; scanner rules were not disabled.
 
-## Границы доказательств
+## Evidence boundaries
 
-- Для **этой 0.4** новое исполнение задания реальной моделью не проводилось. Успешная живая команда относится к прежней 0.3: [её отдельные результаты](evidence/public-release-0.3.0-beta.1.json). Старый успех не выдаётся за новый.
-- Не проверены установка самого Hermes на чистом компьютере, первый вход нового аккаунта и независимый проход новичком.
-- Не подтверждены все провайдеры, модели и операционные системы, распределённая команда или работа без наблюдения.
-- Программные проверки искусственных файлов и контрольные суммы не заменяют оценку полезности результата человеком.
+- For **this 0.4 build**, no new task executed by a real model was tested. The successful live team belongs to the earlier 0.3: [its separate results](evidence/public-release-0.3.0-beta.1.json). An old success is not presented as new evidence.
+- Installing Hermes on a clean computer, a new account's first login, and an independent beginner's walkthrough have not been tested.
+- Support for every provider, model, and operating system, a distributed team, or unattended operation has not been confirmed.
+- Programmatic checks of synthetic files and checksums do not replace human judgment about a result's usefulness.
 
-Это проверенная **бета**, не обещание стабильного промышленного выпуска. [Работа с новой версией](ALTRON_DESKTOP.md), [обновление и возврат](UPDATING.md), [запуск проверок разработчиком](LIVE_TESTING.md).
+This is a verified **beta**, not a promise of a stable production release. See [using the new version](ALTRON_DESKTOP.md), [upgrading and rolling back](UPDATING.md), and [developer test instructions](LIVE_TESTING.md).

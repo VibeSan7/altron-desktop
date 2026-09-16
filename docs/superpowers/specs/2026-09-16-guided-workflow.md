@@ -1,23 +1,23 @@
-# Altron: первый полезный результат без тупиков
+# Altron: a first useful result without dead ends
 
-## Согласованный результат
+## Agreed outcome
 
-Пользователь согласовал исправление перечисленных в аудите пробелов: отмена/восстановление, доработка той же задачи, понятный первый запуск и выбор подключения, прозрачная приёмка, обзор/поиск/архив задач, наблюдаемость расходов и безопасная диагностика. Рабочий профиль владельца не изменяется. Этот этап реализует и проверяет продукт локально; не запускает отдельную проверяющую модель и не выдаёт автоматический прогон за испытание независимым новичком.
+The user approved addressing the gaps identified in the audit: cancellation/recovery, revisions within the same task, understandable onboarding and connection selection, transparent acceptance, task overview/search/archive, usage visibility, and safe diagnostics. The owner's working profile is not changed. This phase implements and verifies the product locally; it does not launch a separate reviewer model or present automated runs as an independent beginner's trial.
 
-## Поведение и границы
+## Behavior and boundaries
 
-- Согласованный, но ещё не запущенный план можно явно отменить; история остаётся. Обновление после отмены разрешено, но незавершённые реальные запуски по-прежнему блокируют его.
-- Возврат на доработку и новая попытка сохраняют ID задачи, прежние критерии, файлы, заключения, план и запуски в истории попыток. Новая попытка всегда начинается с draft и требует нового согласования. Старое позднее событие не меняет новую попытку.
-- Восстановление сначала читает фактическое состояние Hermes, не отправляет prompt и не вызывает session.resume (он может автоматически продолжить работу). Нельзя выдавать отсутствие соединения за остановку. Недоказуемое состояние остаётся заблокированным с понятной причиной.
-- Архивирование обратимо, только для завершённых задач; оно не удаляет файлы и не скрывает активные работы от обслуживания.
-- Новичок выбирает подключение из штатного каталога Hermes. Секреты не читаются в интерфейс Altron и не копируются; расширенный ручной ввод остаётся для явно заданных подключений. Папку выбирают через разрешённую возможность платформы либо безопасный серверный просмотр каталогов, без изменения Hermes core.
-- Стартовый пример лишь заполняет форму: ни проект, ни платный запуск не создаются автоматически. Проверка настроенного подключения без вызова модели не называется проверкой успешного ответа ИИ.
-- Итог показывает критерии, отчёт, реальные файлы и доказательства. Программная проверка неизменности не выдаётся за смысловую правильность; принять или вернуть на доработку может только пользователь.
-- Обзор показывает счётчики по фактическим задачам, ближайшее требуемое действие, текущие шаги, длительность. Стоимость показывается только из фактических данных Hermes с признаком доступности; неизвестная стоимость не равна нулю. Ограничения запуска должны быть честно описаны, без обещаний жёсткого денежного лимита при отсутствующей информации провайдера.
-- Диагностика содержит только allowlist версий/числа состояний/коды ошибок, без путей пользователя, целей задач, переписок, ключей и необработанных журналов. Публикация отчёта только вручную пользователем.
-- Данные расширяются обратно совместимыми полями формата 1. Старые записи без новых полей читаются. Возврат старого кода не заменяет актуальную БД. Новые исполняемые файлы обязательно включены в manifest.
+- An approved plan that has not started can be explicitly canceled; history remains. Updating is permitted after cancellation, but unfinished actual runs still block it.
+- Revision and a new attempt preserve the task ID and retain previous criteria, files, conclusions, plan, and runs in attempt history. A new attempt always starts as draft and requires renewed approval. A late event from an old attempt cannot change the new one.
+- Recovery first reads Hermes's actual state; it does not send a prompt or call session.resume, which can automatically resume work. A lost connection does not prove that execution has stopped. Unverifiable state remains blocked with a clear reason.
+- Archiving is reversible and limited to settled tasks; it neither deletes files nor hides active work from maintenance.
+- Beginners select connections from Hermes's standard catalog. Secrets are not read into the Altron UI or copied; advanced manual entry remains available for explicitly specified connections. Folders are selected through an allowed platform capability or safe server-side directory browsing, without modifying Hermes core.
+- The starter example only fills a form: it does not automatically create a project or a paid run. Checking connection settings without calling a model is not described as verifying a successful AI response.
+- The result view shows criteria, the report, actual files, and evidence. Programmatic integrity checks are not presented as semantic correctness; only the user can accept a result or request revision.
+- The overview shows counts based on actual tasks, the next required action, current steps, and duration. Cost is shown only from actual Hermes data with availability indicated; unknown cost is not zero. Run limits must be described honestly, without promising a hard spending cap when provider information is unavailable.
+- Diagnostics contain only allowlisted versions, state counts, and error codes, without user paths, task goals, conversations, keys, or raw logs. Only the user can publish a report manually.
+- Data is extended through backward-compatible format-1 fields. Old records without the new fields remain readable. Restoring older code does not replace the current database. New executable files must be included in the manifest.
 
-## Контракты жизненного цикла
+## Lifecycle contracts
 
 `Store.cancel_task(project_id, task_id, reason)`; HTTP POST `/projects/{p}/tasks/{t}/cancel` `{reason, confirm:true}`.
 
@@ -25,14 +25,14 @@
 
 `Store.archive_task(project_id, task_id, archived)`; POST `/projects/{p}/tasks/{t}/archive` `{archived:bool}`.
 
-В задаче `attempt` (по умолчанию 1), `attempts` (снимки прежних попыток), `feedback`, `archived`. У запуска `attempt` (для старых записей 1). Снимок содержит номер попытки, цель/критерии/план, статус, summary, artifacts, specialist_review, acceptance_review, team, feedback и время. Текущие файлы физически не удаляются. `cancelled` — отдельный статус задачи/команды, не ложное успешное завершение.
+Task fields: `attempt` (default 1), `attempts` (snapshots of previous attempts), `feedback`, and `archived`. Run field: `attempt` (1 for old records). A snapshot contains the attempt number, goal/criteria/plan, status, summary, artifacts, specialist_review, acceptance_review, team, feedback, and time. Current files are not physically deleted. `cancelled` is a separate task/team status, not a false indication of success.
 
-Восстановление и сбор данных Hermes реализуются отдельным адаптером; HTTP не принимает выдуманное клиентом наблюдение об остановке.
+Recovery and collection of Hermes state are implemented by a separate adapter; HTTP does not accept a client-invented observation that execution has stopped.
 
-## Проверка результата
+## Verification
 
-1. Тесты сначала воспроизводят каждый исправляемый класс поведения; обычные проверки не обращаются к модели.
-2. Реальные временные профили/SQLite: отмена ready разрешает обновление, active/unknown не разрешает; история попыток сохраняется после открытия базы; поздний старый запуск не переписывает новую попытку.
-3. UI и RPC: выбор подключения, отсутствие автозапуска примера, смена профиля во время операции, архив/поиск, доработка и повторное согласование.
-4. Изолированный настоящий Desktop: первый запуск, отмена, доработка, сохранение после перезапуска, обновление/возврат. Не управлять рабочим пользовательским окном.
-5. Полный набор Python/JS, сборка и проверка архивов и секретов. Непроверенные первый вход нового аккаунта/независимый новичок отмечаются, не маскируются.
+1. Tests first reproduce every class of behavior being fixed; ordinary checks do not call a model.
+2. Real temporary profiles/SQLite: canceling ready work permits maintenance; active/unknown work does not. Attempt history survives reopening the database, and a late old run cannot overwrite a new attempt.
+3. UI and RPC: connection selection, no automatic example execution, profile changes during an operation, archive/search, revision, and renewed approval.
+4. An isolated real Desktop: first start, cancellation, revision, persistence after restart, upgrade/rollback. Do not control the user's working window.
+5. Full Python/JS suites, package builds, archive checks, and secret scans. Unverified new-account login and independent beginner testing are disclosed, not obscured.

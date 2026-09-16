@@ -1,82 +1,84 @@
-# Altron Desktop 0.4 — первый результат, доработка и возврат
+# Altron Desktop 0.4 — first results, revisions, and rollback
 
-Это инструкция к **0.4.0-beta.1**. Установочные архивы — в [выпуске GitHub](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1). Старый архив 0.3 не содержит описанных ниже новых кнопок. Границы проверок этой беты приведены в [отчёте](DESKTOP_VERIFICATION.md).
+This guide applies to **0.4.0-beta.1**. Installation archives are available in the [GitHub release](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1). The older 0.3 archive does not contain the new controls described below. See the [verification report](DESKTOP_VERIFICATION.md) for the tested scope of this beta.
 
-## Установка
+The current Altron interface is in Russian. This guide describes its actions in English.
 
-1. Установите официальный [Hermes Desktop](https://hermes-agent.nousresearch.com/docs/user-guide/desktop). Altron не заменяет Hermes и не включает общий платный ИИ-сервис.
-2. Импортируйте `altron-0.4.0-beta.1.tar.gz` кнопкой **Импортировать профиль…**. Не распаковывайте архив и не используйте GitHub Source code ZIP.
-3. Полностью закройте и снова откройте Desktop. Во **Возможности → Плагины** включите **Desktop: Altron**, выберите профиль **altron**, затем кнопку **Altron** в нижней строке.
-4. Подключите свой аккаунт/модель в штатных настройках Hermes. Пароли, коды и ключи в Altron не вводятся.
+## Installation
 
-Импорт отказывается перезаписывать существующий профиль. Если Altron уже есть, используйте [обновление](UPDATING.md), а не удаление профиля. Рабочий `default` не перенастраивается. В пакете нет `.env`, `auth.json`, переписок, проектов автора и баз данных. Первый экран и первый проект пустые.
+1. Install the official [Hermes Desktop](https://hermes-agent.nousresearch.com/docs/user-guide/desktop). Altron does not replace Hermes or include shared paid AI access.
+2. Import `altron-0.4.0-beta.1.tar.gz` with the profile-import button. Do not extract the archive or use GitHub's Source code ZIP.
+3. Fully close and reopen Desktop. Enable **Desktop: Altron** in the plugins section, select the **altron** profile, and click **Altron** in the bottom bar.
+4. Connect your own account/model in Hermes's built-in settings. Do not enter passwords, verification codes, or keys in Altron.
 
-## Первый полезный результат
+Import refuses to overwrite an existing profile. If Altron is already installed, use the [upgrade procedure](UPDATING.md) rather than deleting the profile. The working `default` profile is not reconfigured. The package contains no `.env`, `auth.json`, conversations, author projects, or databases. The first screen and first project start empty.
 
-1. Введите **Название проекта**, например «Учебная страница».
-2. Нажмите **Выбрать папку**. Перейдите в подходящий каталог и выберите существующую папку либо введите **Имя новой папки → Создать и выбрать папку**. Затем нажмите **Создать проект**. Поле полного пути остаётся для опытных пользователей. Не выбирайте весь диск или папку настроек Hermes.
-3. В блоке подключения выберите **Настроенное подключение** и **Модель из каталога**. Кнопка **Использовать текущее подключение Hermes** копирует только явно показанную настройку. Это не меняет модель других диалогов. Если требуется вход, выполните его в **Settings → Model** самого Hermes. Проверка настроек не отправляет запрос к модели и не гарантирует, что провайдер примет будущий запрос.
-4. Нажмите **Заполнить учебный пример**. Форма получит задачу: автономная `index.html` с заголовком, тремя услугами и кнопкой контактов, плюс `CHECKS.md` с проверками. **Ничего ещё не запускается и не создаётся.** Можно переписать цель и критерии своими словами.
-5. Нажмите **Создать задачу**. Запишите понятный план, например: «Создать страницу в этой папке; открыть в браузере; проверить кнопку и консоль; записать проверки в CHECKS.md; передать оба файла в Altron». Либо отдельно подтвердите **Попросить Altron составить план**.
-6. Нажмите **Согласовать план**, затем **Запустить исполнителя**. В диалоге сверяются проект, папка, модель и подключение. Только **Подтверждаю запуск** отправляет задание. Возможны расходы вашего провайдера; Altron не подменяет модель при отказе.
-7. Дождитесь **Нужна приёмка** и подтверждения завершения Hermes. Нажмите **Открыть папку результата**, откройте `index.html` в браузере и `CHECKS.md` в текстовом редакторе. Проверьте заголовок, три услуги, кнопку и ошибки консоли браузера. Открытие файла на удалённом Hermes требует доступа к той машине: кнопка Проводника относится к локальному компьютеру.
-8. Если всё соответствует критериям, опишите, что проверили, отметьте **Я открыл файлы и проверил критерии** и нажмите **Я проверил результат — принять**. Если не соответствует — **Вернуть на доработку**.
+## Your first useful result
 
-Это воспроизводимый сценарий для пользователя, а не заранее заготовленный результат. Его качество зависит от выбранной модели и реальных проверок. Объём проверок этой сборки указан в [отчёте](DESKTOP_VERIFICATION.md); автоматизация не выдаётся за испытание независимым новичком.
+1. Enter a project name, such as “Learning page.”
+2. Open the folder picker. Navigate to a suitable directory and choose an existing folder, or enter a new folder name and use the create-and-select action. Then create the project. The full-path field remains available for advanced users. Do not select an entire drive or Hermes's settings directory.
+3. Select a configured connection and a model from the catalog. The action for using the current Hermes connection copies only the explicitly displayed setting. It does not change other conversations' models. If login is needed, complete it in Hermes's own **Settings → Model**. Checking settings does not query the model or guarantee that the provider will accept a future request.
+4. Fill the learning example. This populates the form with a task to create a standalone `index.html` containing a heading, three services, and a contact button, plus `CHECKS.md` documenting the checks. **Nothing is started or created yet.** You can rewrite the goal and criteria in your own words.
+5. Create the task. Write a clear plan, for example: “Create the page in this folder; open it in a browser; check the button and console; record the checks in CHECKS.md; submit both files to Altron.” Alternatively, separately confirm a request for Altron to draft the plan.
+6. Approve the plan, then start the executor. The confirmation checks the project, folder, model, and connection. Only the final launch confirmation sends the task. Your provider may charge for it; Altron does not substitute a different model after a failure.
+7. Wait until the task needs acceptance and Hermes confirms completion. Open the result folder, open `index.html` in a browser, and open `CHECKS.md` in a text editor. Check the heading, three services, contact button, and browser-console errors. Opening a file on a remote Hermes machine requires access to that machine: the File Explorer action applies to the local computer.
+8. If the result meets the criteria, describe what you checked, confirm that you opened the files and verified the criteria, and accept the result. Otherwise, return it for revision.
 
-## Доработка одной задачи
+This is a reproducible user scenario, not a prewritten result. Its quality depends on the selected model and actual checks. The [report](DESKTOP_VERIFICATION.md) states this build's verification scope; automation is not presented as an independent beginner's trial.
 
-После подтверждённого завершения нажмите **Вернуть на доработку**, опишите конкретное замечание и подтвердите действие. Например: «Кнопка не показывает контакты. Исправить и проверить нажатием».
+## Revising the same task
 
-- ID, исходная цель и критерии задачи сохраняются.
-- Прежние план, отчёт, замечания, список файлов и контрольные суммы остаются в **Истории попыток**; старые диалоги исполнителей также остаются.
-- Новая попытка получает номер и статус **Нужен план**. Согласуйте исправленный план и отдельно подтвердите запуск.
-- Возврат на доработку сам не вызывает модель и не изменяет файлы.
-- История попыток — не резервная копия байтов файлов: следующая согласованная работа может изменить их в папке проекта. Для версий важных файлов используйте собственную резервную копию или Git.
+After confirmed completion, return the task for revision, describe a specific problem, and confirm. For example: “The button does not show contact details. Fix it and verify by clicking it.”
 
-Запоздавший ответ прежнего исполнителя не может переписать новую попытку. Пока запуск не подтверждён как завершённый, доработка и приёмка заблокированы.
+- The task ID, original goal, and acceptance criteria are preserved.
+- Previous plans, reports, feedback, file lists, and checksums remain in the attempt history; earlier executor conversations also remain available.
+- The new attempt receives a number and a status indicating that it needs a plan. Approve the revised plan and confirm its launch separately.
+- Requesting revision does not itself call a model or change files.
+- Attempt history is not a backup of file contents: the next approved task may change files in the project directory. Use your own backups or Git for important file versions.
 
-## Отмена, остановка и восстановление
+A late response from an earlier executor cannot overwrite a new attempt. Revision and acceptance remain blocked until execution is confirmed to have finished.
 
-**Отменить задачу** — для ещё не начатого плана либо уже остановленной работы. Введите причину и подтвердите. План и история остаются; отменённая команда больше не блокирует обслуживание сама по себе. Если исполнитель ещё работает, сначала нужна его остановка.
+## Cancellation, stopping, and recovery
 
-**Запросить остановку** посылает запрос Hermes. Это не обещание немедленной остановки. Состояние считается завершённым только после подтверждения.
+**Canceling a task** applies to a plan that has not started or work that has already stopped. Enter a reason and confirm. The plan and history remain; a canceled team no longer blocks maintenance on its own. If the executor is still active, stop it first.
 
-**Проверить и восстановить состояние** помогает после закрытия окна, перезапуска или потерянного завершающего сообщения. Altron:
+**Requesting a stop** sends a request to Hermes. It does not promise an immediate stop. Execution is considered finished only after confirmation.
 
-- сверяет фактический сеанс, профиль и папку в Hermes;
-- не останавливает активного исполнителя и не принимает отсутствие соединения за остановку;
-- закрывает неработающий старый сеанс и проверяет, не владеет ли им другой процесс;
-- сохраняет прерванное состояние без нового задания и без перехода к следующему шагу команды.
+**Checking and recovering state** helps after closing the window, restarting, or losing a terminal event. Altron:
 
-Если реестр недоступен или эта версия Hermes не поддерживается, блокировка остаётся. Не удаляйте записи базы и не обходите `active_operations`. При остающейся неопределённости используйте диагностический отчёт. Если работа ещё активна, запросите остановку; после подтверждения выберите доработку или отмену.
+- checks the actual Hermes session, profile, and folder;
+- does not stop an active executor or treat a lost connection as proof that execution stopped;
+- closes an old idle session and checks whether another process owns it;
+- records an interrupted state without submitting another task or advancing the team to its next step.
 
-Основные статусы:
+If the registry is unavailable or the Hermes version is unsupported, the block remains. Do not delete database records or bypass `active_operations`. Use the diagnostic report when uncertainty remains. If work is still active, request a stop; after confirmation, choose revision or cancellation.
 
-- **Остановлено с ошибкой:** ошибка запуска или отсутствие переданного результата.
-- **Состояние не подтверждено:** пока нельзя достоверно решить, выполняется ли работа.
-- **Запрошена остановка:** запрос отправлен, подтверждение ещё не получено.
-- **Выполнение остановлено:** получено подтверждение остановки либо выполнена явная безопасная сверка. Смотрите пояснение у запуска.
-- **Отменено пользователем:** явная отмена задачи, не успешное выполнение.
+Main status meanings:
 
-## Команда и ограничения
+- **Failed:** the launch failed or no result was submitted.
+- **Unconfirmed:** whether execution is still active cannot yet be established reliably.
+- **Stop requested:** the request was sent, but confirmation has not arrived.
+- **Execution stopped:** stopping was confirmed or an explicit safe reconciliation was completed. Read the explanation attached to the run.
+- **Canceled by the user:** the task was explicitly canceled, not successfully completed.
 
-**Состав команды** сохраняет настройки ролей в проекте. Для простого старта можно явно назначить выбранное подключение всем основным ролям, кроме проверяющего. Отдельный проверяющий никогда не назначается этой кнопкой.
+## Teams and limits
 
-В **Последовательности специалистов** задаются шаги с ролями, результатами и критериями. Например: технический исполнитель создаёт страницу, затем специалист документации пишет инструкцию по её запуску. Каждый следующий получает проверенные файлы предыдущего только после завершения. Пауза останавливает переход к следующему шагу. Возобновление требует подтверждения; после сбоя сначала выполняется сверка.
+Team configuration saves role settings within the project. For a simple start, you can explicitly assign the selected connection to all main roles except the reviewer. This action never assigns a separate reviewer.
 
-В **Ограничении новых запусков** можно явно разрешить ещё заданное число обращений: составление плана, каждый командный шаг и отдельная проверка считаются по одному. Ноль запрещает новые запуски; пустое поле снимает ограничение. Это **не денежный лимит** и не остановка уже работающего исполнителя. Неудачная подготовка запуска также расходует разрешённую попытку.
+A specialist sequence defines steps, roles, outputs, and acceptance criteria. For example, a technical executor creates a page, then a documentation specialist writes instructions for opening it. Each next step receives the previous step's verified files only after completion. Pausing prevents advancement to the next step. Resuming requires confirmation; after a failure, reconcile the state first.
 
-Показаны выбранный специалист, состояние, длительность и доступные данные расхода. Отсутствующая цена обозначается **неизвестна**, а не нулём; расчётная цена помечается оценкой Hermes, не счётом провайдера.
+The new-run limit explicitly permits a specified number of further calls: plan generation, each team step, and a separate review each count as one. Zero blocks new runs; an empty field removes the limit. This is **not a spending cap** and does not stop an already running executor. A failed attempt to prepare a run also consumes a permitted attempt.
 
-## Обзор и архив
+The UI displays the selected specialist, state, duration, and available usage data. An unavailable price is **unknown**, not zero; an estimated price is labeled as Hermes's estimate, not the provider's bill.
 
-**Сейчас в проекте** показывает открытые задачи, ожидающие приёмки, ошибки и последнее решение. **Поиск задач** ищет по цели и критериям. Завершённую/отменённую/остановленную задачу можно **Убрать в архив** и затем **Показать архив → Вернуть из архива**. Данные и файлы не удаляются. Архив не скрывает неизвестное выполнение от проверки безопасности.
+## Overview and archive
 
-## Диагностика и обслуживание
+The project overview shows open tasks, tasks awaiting acceptance, errors, and the latest decision. Task search matches goals and acceptance criteria. A completed, canceled, or stopped task can be archived and later restored from the archive view. Data and files are not deleted. Archiving does not hide unconfirmed execution from safety checks.
 
-В **Помощи и безопасной диагностике** нажмите **Составить диагностический отчёт**, просмотрите результат и при необходимости скопируйте его. В нём только версии, ОС, количество проектов и состояний; нет пользовательских путей, текста задач, диалогов и секретов. Отправки в GitHub автоматически нет.
+## Diagnostics and maintenance
 
-Не прикладывайте `.env`, `auth.json`, базу, весь профиль и необработанные журналы. Перед публикацией снимка экрана проверьте личные данные. [Форма ошибки](https://github.com/VibeSan7/altron-desktop/issues/new?template=bug_report.yml).
+In the help and safe-diagnostics section, generate a diagnostic report, review it, and copy it if needed. It contains only versions, the OS, and counts of projects and states; it excludes user paths, task text, conversations, and secrets. Nothing is sent to GitHub automatically.
 
-Обновление и возврат кода описаны [отдельно](UPDATING.md). Сохраните профиль; не удаляйте блокировки обслуживания вручную. Чтобы просто прекратить пользоваться Altron, завершите его задания, выключите **Desktop: Altron** и переключитесь на прежний профиль. Удаление не требуется.
+Do not attach `.env`, `auth.json`, the database, an entire profile, or raw logs. Check screenshots for personal data before publishing them. [Bug report form](https://github.com/VibeSan7/altron-desktop/issues/new?template=bug_report.yml).
+
+Updates and code rollback are covered [separately](UPDATING.md). Preserve the profile; do not remove maintenance locks manually. To stop using Altron, finish its tasks, disable **Desktop: Altron**, and switch back to your previous profile. Deletion is unnecessary.

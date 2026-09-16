@@ -1,74 +1,80 @@
 # Altron Desktop
 
-**Проекты, задачи и проверяемые результаты внутри официального Hermes Desktop.**
+English | [Russian](README.ru.md)
 
-Бета **0.4.0-beta.1**: от цели до результата, с отменой, восстановлением и доработкой в той же задаче. Это предварительная версия, не обещание безошибочной работы ИИ. **Новое выполнение задания реальной моделью для 0.4 не проверялось**; успешная живая проверка прежней 0.3 не выдаётся за новую. Точные границы проверок — в [отчёте](docs/DESKTOP_VERIFICATION.md).
+Only this README has a separate Russian translation in `README.ru.md`. All other documentation, issue templates, and release notes are in English only.
 
-## Скачать и открыть — без команд
+**Projects, tasks, and verifiable results inside the official Hermes Desktop.**
 
-1. Установите [официальный Hermes Desktop](https://hermes-agent.nousresearch.com/docs/user-guide/desktop).
-2. Скачайте **`altron-0.4.0-beta.1.tar.gz`** из [выпуска 0.4.0-beta.1](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1). Распаковывать его не нужно. Не выбирайте GitHub Source code ZIP.
-3. В Desktop нажмите **Import profile / Импорт профиля** рядом с кнопкой добавления профиля и выберите архив. Он создаёт отдельный профиль `altron`, не заменяет `default` и отказывается перезаписывать существующий профиль.
-4. Полностью закройте и снова откройте Desktop. В **Возможности → Plugins / Плагины** включите **Desktop: Altron**. Затем нажмите профиль **`altron`** в панели профилей. Python-часть уже включена в нём конфигурацией пакета.
-5. Нажмите **Altron** в нижней строке Desktop. Откроется отдельная рабочая вкладка. При следующих запусках тоже сначала выбирайте профиль `altron`: в `default` серверная часть этого пакета не включена.
-6. Подключите свою модель штатными средствами Hermes. В Altron выберите **Настроенное подключение** и **Модель из каталога** либо нажмите **Использовать текущее подключение Hermes**. Ключи и пароли в поля Altron не вводятся.
+Beta **0.4.0-beta.1** takes a goal through to a result, with cancellation, recovery, and revisions within the same task. This is a preview, not a promise of error-free AI. **A new task executed by a real model has not been tested for 0.4**; the successful live test of the earlier 0.3 is not presented as new evidence. See the [verification report](docs/DESKTOP_VERIFICATION.md) for the exact scope.
 
-Нужна версия Desktop с SDK `host.openWorkspace`, `ctx.rest` и `host.onEvent`. Проверенная сборка: **Hermes Desktop 0.21.3**, исходники `d84ece48b8552501660be229797e2d2aa4cee8db`; Python 3.11+. Для восстановления также необходимы штатный реестр исполнений и проверка межпроцессного владения сеансами. При отсутствии этих возможностей Altron сохраняет блокировку, а не считает работу остановленной.
+## Download and open — no commands required
 
-Подробности: [установка, работа и возврат](https://github.com/VibeSan7/altron-desktop/blob/main/docs/ALTRON_DESKTOP.md).
+1. Install the [official Hermes Desktop](https://hermes-agent.nousresearch.com/docs/user-guide/desktop).
+2. Download **`altron-0.4.0-beta.1.tar.gz`** from [release 0.4.0-beta.1](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1). Do not extract it. Do not choose GitHub's Source code ZIP.
+3. In Desktop, use **Import profile** next to the add-profile button and select the archive. This creates a separate `altron` profile, does not replace `default`, and refuses to overwrite an existing profile.
+4. Fully close and reopen Desktop. Enable **Desktop: Altron** in the plugins section, then select **`altron`** in the profile rail. The package configuration already enables the Python component for that profile.
+5. Click **Altron** in Desktop's bottom bar to open its workspace tab. On subsequent starts, select the `altron` profile first as well: this package's backend is not enabled in `default`.
+6. Connect your own model using Hermes's built-in settings. In Altron, select the configured connection and a model from the catalog, or use the action that copies the current Hermes connection. Do not enter keys or passwords in Altron fields.
 
-## Что можно делать
+The current Altron interface is in Russian. This documentation describes its actions in English.
 
-- Создавать несколько проектов с отдельными папками, задачами и решениями.
-- Просить Altron предложить план или записывать план самостоятельно.
-- Согласовывать план **до** запуска исполнителя.
-- Выбирать техническую работу, исследования/бизнес или подготовку документации.
-- Сохранять модель, подключение и выбранные инструкции для каждой роли.
-- Согласовывать последовательность специалистов: следующий получает проверенные файлы предыдущего и запускается только после подтверждённого завершения.
-- Приостанавливать команду без скрытых повторов и замен модели.
-- Отменять ещё не запущенный план и проверять фактическое состояние после сбоя.
-- Возвращать результат на доработку: тот же ID задачи, замечания и история попыток, новое явное согласование.
-- Выбирать и создавать папку, заполнять учебный пример без автоматического запуска.
-- Искать задачи, убирать завершённые в обратимый архив, видеть необходимые следующие действия.
-- Задавать число разрешённых новых запусков и видеть данные расхода, только если их предоставил Hermes.
-- Составлять диагностический отчёт без переписок, пользовательских путей и секретов.
-- Передавать результат реальными файлами, проверять их неизменность по SHA-256 и принимать работу вручную.
-- Заказывать отдельную проверку отдельным явным запуском.
-- Открывать диалог исполнителя в Hermes и запрашивать остановку.
-- Возвращаться к проектам после перезапуска без автоматической повторной отправки задач.
-- Проверять пакет обновления по опубликованной контрольной сумме, сохранять резервную копию и возвращать прежний код без замены текущих проектов и настроек.
+Desktop must provide the `host.openWorkspace`, `ctx.rest`, and `host.onEvent` SDK capabilities. Tested build: **Hermes Desktop 0.21.3**, source commit `d84ece48b8552501660be229797e2d2aa4cee8db`; Python 3.11+. Recovery also requires Hermes's runtime registry and cross-process session-ownership checks. If these capabilities are unavailable, Altron keeps the operation blocked rather than assuming execution has stopped.
 
-**Пример:** проект «Сайт», задача «Подготовить страницу контактов», критерии «Страница открывается, телефон и адрес видны». Сначала согласуется план. Затем запускается исполнитель. Файл и отчёт попадают на проверку; фраза модели «готово» сама по себе не завершает задачу.
+Details: [installation, usage, and rollback](https://github.com/VibeSan7/altron-desktop/blob/main/docs/ALTRON_DESKTOP.md).
 
-## Безопасность и честные статусы
+## What you can do
 
-Altron хранит собственную базу в `altron/altron.db` внутри выбранного профиля Hermes. Пакет не содержит проектов автора, истории сообщений, токенов, паролей или моделей по умолчанию.
+- Create multiple projects with separate folders, tasks, and decisions.
+- Ask Altron to propose a plan or write one yourself.
+- Approve a plan **before** starting an executor.
+- Choose technical work, research/business work, or documentation.
+- Save each role's model, connection, and selected instructions.
+- Approve a sequence of specialists: the next receives verified files from the previous step and starts only after confirmed completion.
+- Pause a team without hidden retries or model substitutions.
+- Cancel a plan that has not started and check the actual state after a failure.
+- Request revisions within the same task ID, retaining feedback and attempt history and requiring new explicit approval.
+- Choose or create a folder and fill a learning example without starting it automatically.
+- Search tasks, move settled tasks into a reversible archive, and see the next required actions.
+- Set the number of permitted new runs and view usage data only when Hermes provides it.
+- Generate a diagnostic report without conversations, user paths, or secrets.
+- Deliver results as real files, check their integrity with SHA-256, and accept the work manually.
+- Request a separate review through a separately confirmed run.
+- Open the executor's conversation in Hermes and request a stop.
+- Return to projects after restarting without automatically resubmitting tasks.
+- Verify an update package against its published checksum, create a backup, and restore previous code without replacing current projects or settings.
 
-- Папки проектов не могут перекрываться; запрос к чужой задаче отклоняется.
-- Инструменты `altron_context` и `altron_update` привязаны к назначенной сессии.
-- Повторное нажатие не запускает второго исполнителя.
-- Подтверждение доставки задания не считается выполнением.
-- Завершающая ошибка Hermes сохраняется как ошибка, а не вечное «В работе».
-- После потери подтверждения или перезапуска незавершённое выполнение считается неподтверждённым. Автоматической повторной отправки нет.
-- Только пользователь принимает результат; изменившийся или недоступный файл блокирует приёмку.
+**Example:** a project called “Website,” a task to prepare a contact page, and acceptance criteria requiring the page to open and display a phone number and address. First approve the plan, then start the executor. Its file and report are submitted for review; the model saying “done” does not complete the task by itself.
 
-**Это разделение данных приложения, не отдельная виртуальная машина.** Обычные инструменты Hermes сохраняют свои права. Для опасных действий используются штатные ограничения и подтверждения Hermes. Altron не отключает их.
+## Safety and honest status reporting
 
-## Что проверено и что не утверждается
+Altron keeps its own database at `altron/altron.db` inside the selected Hermes profile. The package contains no author projects, message history, tokens, passwords, or default models.
 
-[Отчёт о проверках](https://github.com/VibeSan7/altron-desktop/blob/main/docs/DESKTOP_VERIFICATION.md) разделяет:
-- тесты данных, HTTP API, контекста инструментов и управления запуском;
-- запуск реального Desktop с искусственными проектами, перезапуск и отказ неверного подключения;
-- сборку архива, его содержимое и штатный импорт без перезаписи;
-- автоматические проверки GitHub.
+- Project folders cannot overlap; access to another project's task is rejected.
+- The `altron_context` and `altron_update` tools are bound to the assigned session.
+- Clicking twice does not start a second executor.
+- Acknowledgment that a task was delivered is not treated as completion.
+- A terminal Hermes error is stored as an error rather than leaving the task running forever.
+- After acknowledgment is lost or Desktop restarts, unfinished execution is treated as unconfirmed. There is no automatic resubmission.
+- Only the user can accept a result; a changed or unavailable file blocks acceptance.
 
-Для ранее опубликованной 0.3 дополнительно проверено настоящее выполнение задания через `openai-codex / gpt-6-astra`: модель создала файл, передала его в Altron, а программная проверка сверила содержимое и SHA-256 до приёмки. Подробности и точные границы — в [отчёте](https://github.com/VibeSan7/altron-desktop/blob/main/docs/DESKTOP_VERIFICATION.md). Это проверка существующего подключения владельца, не первого входа нового аккаунта и не всех провайдеров. Аккаунты и их доступность пользователь подключает в Hermes. Команда работает по согласованному плану, а не бесконтрольно в фоне. Бета не включает собственный Telegram-мост, автоматическую миграцию старого Registry, отдельный установщик Hermes или распределённую инфраструктуру. Выбранные инструкции agency-agents адаптированы под правила Altron; источник и лицензия указаны в [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Инструкция специалиста не является отдельным инструментом и не гарантирует качество ответа.
+**This is application-level data separation, not a separate virtual machine.** Ordinary Hermes tools retain their permissions. Dangerous actions remain subject to Hermes's built-in restrictions and confirmations; Altron does not disable them.
 
-Встроенное обслуживание доступно начиная с 0.3. Для перехода с 0.2 или отмены незапущенного плана, блокирующего обновление 0.3, используйте отдельный архив `altron-maintenance-0.4.0-beta.1.tar.gz` и [пошаговую инструкцию перехода и возврата](https://github.com/VibeSan7/altron-desktop/blob/main/docs/UPDATING.md). Не импортируйте основной архив поверх прежнего профиля. Чистая установка Hermes на новом компьютере и первый вход нового аккаунта остаются за границами проверенного сценария.
+## What has been tested — and what is not claimed
 
-## Разработка
+The [verification report](https://github.com/VibeSan7/altron-desktop/blob/main/docs/DESKTOP_VERIFICATION.md) distinguishes:
+- tests of data, the HTTP API, tool context, and execution control;
+- real Desktop runs with synthetic projects, restarts, and rejection of an invalid connection;
+- archive construction, contents, and native import without overwriting profiles;
+- automated GitHub checks.
 
-Node.js 22, Python 3.11+. Для обычных тестов не нужен рабочий профиль Hermes.
+The previously published 0.3 also passed a real task using `openai-codex / gpt-6-astra`: the model created a file and submitted it to Altron, and programmatic checks verified its contents and SHA-256 before acceptance. See the [report](https://github.com/VibeSan7/altron-desktop/blob/main/docs/DESKTOP_VERIFICATION.md) for details and exact limits. This tested the owner's existing connection, not a new account's first login or every provider. Users connect their own accounts and manage availability in Hermes. Teams follow an approved plan rather than running unattended in the background. The beta does not include its own Telegram bridge, automatic migration from the old Registry, a standalone Hermes installer, or distributed infrastructure. Selected agency-agents instructions are adapted to Altron's rules; source and license details are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). A specialist instruction is not a separate tool and does not guarantee response quality.
+
+Built-in maintenance is available from 0.3 onward. To upgrade from 0.2, or cancel an unstarted plan that blocks an upgrade from 0.3, use the separate `altron-maintenance-0.4.0-beta.1.tar.gz` archive and the [step-by-step upgrade and rollback guide](https://github.com/VibeSan7/altron-desktop/blob/main/docs/UPDATING.md). Do not import the main archive over an existing profile. Installing Hermes on a clean computer and signing into a new account remain outside the verified scenario.
+
+## Development
+
+Node.js 22 and Python 3.11+. Ordinary tests do not require a working Hermes profile.
 
 ```sh
 npm ci
@@ -90,19 +96,19 @@ python -m pip install -r altron/requirements-test.txt
 python -m pytest -c altron/pytest.ini altron/tests --ignore=altron/tests/test_plugin.py --ignore=altron/tests/test_native_loader.py --ignore=altron/tests/test_profile_import.py --ignore=altron/tests/test_bundle.py
 ```
 
-Сборка профиля описана стандартным Python-шагом в [workflow](.github/workflows/altron-desktop.yml); состав определяется [manifest.json](packaging/manifest.json). `test_bundle.py` запускается после сборки архива.
+The profile is built by the standard Python step in the [workflow](.github/workflows/altron-desktop.yml); its contents are defined by [manifest.json](packaging/manifest.json). Run `test_bundle.py` after building the archive.
 
-Интеграционные проверки требуют установленного Hermes; `npm run test:native` дополнительно использует `ALTRON_JS_HOME` (папка `apps/desktop`) и `ALTRON_PYTHON` (его Python). Тест создаёт собственные настройки и не наследует окружение с ключами. Отдельная [проверка с настоящей моделью](docs/LIVE_TESTING.md) запускается только явным `ALTRON_LIVE=1 npm run test:live`; без этого разрешения она пропускается.
+Integration checks require an installed Hermes. `npm run test:native` also uses `ALTRON_JS_HOME` (the `apps/desktop` directory) and `ALTRON_PYTHON` (its Python interpreter). The test creates its own settings and does not inherit an environment containing keys. The separate [real-model test](docs/LIVE_TESTING.md) requires the explicit `ALTRON_LIVE=1 npm run test:live` opt-in; without it, the test is skipped.
 
-## Структура
+## Repository structure
 
-- `altron/` — новый Desktop-модуль, API, инструменты, исходники интерфейса и тесты.
-- `packaging/` — нейтральный профиль и явный список файлов поставки.
-- `docs/` — инструкции, границы проверок и описание обслуживания.
-- `.github/workflows/` — автоматические тесты и воспроизводимая сборка.
+- `altron/` — the Desktop module, API, tools, UI source, and tests.
+- `packaging/` — a neutral profile and an explicit package file list.
+- `docs/` — guides, verification boundaries, and the maintenance contract.
+- `.github/workflows/` — automated tests and reproducible builds.
 
-## Обратная связь
+## Feedback
 
-Сообщите об ошибке через [GitHub Issues](https://github.com/VibeSan7/altron-desktop/issues). Укажите версии Windows, Hermes и Altron, шаги воспроизведения, ожидаемый и фактический результат. GitHub-аккаунт нужен для обращения, но не для скачивания. **Не прикладывайте** ключи, `.env`, `auth.json`, полную папку профиля, личные переписки или необработанные журналы. Перед публикацией снимка экрана проверьте, что на нём нет личных данных.
+Report reproducible problems through [GitHub Issues](https://github.com/VibeSan7/altron-desktop/issues). Include Windows, Hermes, and Altron versions, reproduction steps, and expected versus actual behavior. A GitHub account is required to submit an issue, but not to download. **Do not attach** keys, `.env`, `auth.json`, an entire profile directory, private conversations, or raw logs. Check screenshots for personal data before publishing them.
 
-[MIT](LICENSE). Hermes и его зависимости распространяются на своих условиях и в архив Altron не копируются.
+[MIT](LICENSE). Hermes and its dependencies have their own terms and are not copied into the Altron archive.
