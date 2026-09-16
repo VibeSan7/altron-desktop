@@ -9,10 +9,12 @@ import {createHash, randomUUID} from 'node:crypto';
 
 const execFileAsync = promisify(execFile);
 
-test(process.env.ALTRON_LIVE_TEAM === '1' ? 'an approved team hands off verified files through the real Altron Desktop' : 'an explicitly authorized model delivers a verified artifact through Altron Desktop', {
+test(process.env.ALTRON_LIVE_AUTONOMOUS === '1' ? 'an authorized model interviews, executes and verifies an autonomous project' : process.env.ALTRON_LIVE_TEAM === '1' ? 'an approved team hands off verified files through the real Altron Desktop' : 'an explicitly authorized model delivers a verified artifact through Altron Desktop', {
   skip: process.env.ALTRON_LIVE !== '1', timeout: 900000,
 }, async () => {
   const teamMode = process.env.ALTRON_LIVE_TEAM === '1';
+  const autonomousMode = process.env.ALTRON_LIVE_AUTONOMOUS === '1';
+  assert.ok(!(teamMode && autonomousMode), 'Select one live acceptance mode per invocation');
   const {ALTRON_JS_HOME: desktop, ALTRON_PYTHON: python, ALTRON_LIVE_MODEL: model, ALTRON_LIVE_PROVIDER: provider, HERMES_HOME: home} = process.env;
   assert.ok(desktop && python && model && provider && home, 'Explicit Desktop, Python, model, provider and Hermes home are required');
   const require = createRequire(path.resolve(desktop, 'package.json'));
@@ -46,7 +48,9 @@ test(process.env.ALTRON_LIVE_TEAM === '1' ? 'an approved team hands off verified
   await fs.mkdir(appHome);
   await fs.cp(path.join(profileHome, 'desktop-plugins'), path.join(appHome, 'desktop-plugins'), {recursive: true});
   await fs.access(path.join(profileHome, 'plugins/altron/plugin.yaml'));
-  for (const [key, value] of [['model.default', model], ['model.provider', provider]]) {
+  const settings = [['model.default', model], ['model.provider', provider], ['auxiliary.title_generation.enabled', 'false']];
+  if (autonomousMode) settings.push(['agent.max_turns', '16'], ['approvals.mode', 'manual']);
+  for (const [key, value] of settings) {
     await execFileAsync(python, ['-m', 'hermes_cli.main', 'config', 'set', key, value], {cwd: core, env, windowsHide: true});
   }
   Object.assign(env, {
@@ -54,7 +58,7 @@ test(process.env.ALTRON_LIVE_TEAM === '1' ? 'an approved team hands off verified
     HERMES_DESKTOP_IGNORE_EXISTING: '1', HERMES_DESKTOP_HERMES_ROOT: core,
     HERMES_DESKTOP_PYTHON: python, HERMES_DESKTOP_APP_NAME: `AltronAcceptance-${path.basename(evidence)}`,
   });
-  await fs.writeFile(path.join(evidence, 'boundary.json'), JSON.stringify({profile, profileHome, projectDirectory, model, provider, externalInferenceAuthorized: true, credentialFilesCopied: false, originalDesktopControlled: false, isolatedDesktopPluginRoot: true, archiveSha256}, null, 2));
+  await fs.writeFile(path.join(evidence, 'boundary.json'), JSON.stringify({profile, profileHome, projectDirectory, model, provider, autonomousMode, externalInferenceAuthorized: true, credentialFilesCopied: false, originalDesktopControlled: false, isolatedDesktopPluginRoot: true, archiveSha256}, null, 2));
   console.log(`Live evidence: ${evidence}`);
   await fs.mkdir(env.HERMES_DESKTOP_USER_DATA_DIR, {recursive: true});
   await fs.writeFile(path.join(env.HERMES_DESKTOP_USER_DATA_DIR, 'active-profile.json'), JSON.stringify({profile}));
@@ -113,11 +117,105 @@ test(process.env.ALTRON_LIVE_TEAM === '1' ? 'an approved team hands off verified
     const sessions = await page.evaluate(expected => window.__HERMES_PLUGIN_SDK__.host.request('session.list', {profile: expected, limit: 1}), profile);
     assert.equal((sessions.sessions ?? sessions).length, 0, 'A fresh QA profile must not expose existing sessions');
     await page.getByRole('button', {name: /^(Capabilities|Возможности)$/}).click();
-    await page.getByText(/^(Plugins|Плагины)$/).first().click();
+    await fs.writeFile(path.join(evidence, 'startup-notifications.json'), JSON.stringify(await page.getByRole('status').allTextContents(), null, 2));
+    await page.getByRole('button', {name: /^(Plugins|Плагины)(\s|$)/}).press('Enter');
     const toggle = page.getByRole('switch', {name: 'Desktop: Altron', exact: true});
     await toggle.waitFor({timeout: 30000});
     if (await toggle.getAttribute('aria-checked') !== 'true') await toggle.click();
     await page.getByRole('button', {name: 'Altron', exact: true}).click();
+    if (autonomousMode) {
+      const uiErrors = [];
+      page.on('pageerror', error => uiErrors.push(error.message));
+      const readMission = async () => {
+        const {stdout} = await execFileAsync(python, ['-c',
+          'import sqlite3,sys; c=sqlite3.connect("file:"+sys.argv[1]+"?mode=ro",uri=True); rows=c.execute("SELECT document FROM altron_missions").fetchall(); assert len(rows)==1; print(rows[0][0]); c.close()',
+          path.join(profileHome, 'altron/altron.db')], {env, windowsHide: true, encoding: 'utf8'});
+        return JSON.parse(stdout);
+      };
+      const inputBytes = await fs.readFile(path.join(projectDirectory, 'input.json'));
+      const code = "import json,pathlib; a=json.loads(pathlib.Path('input.json').read_text(encoding='utf-8')); r=json.loads(pathlib.Path('result.json').read_text(encoding='utf-8')); assert r==dict(marker=a['marker'],count=len(a['values']),total=sum(a['values'])); t=pathlib.Path('report.md').read_text(encoding='utf-8'); assert a['marker'] in t; assert ('Total (RUB): '+str(sum(a['values']))) in t; print('ACCEPTANCE_OK')";
+      const checkCommand = `${JSON.stringify(python)} -c ${JSON.stringify(code)}`;
+      const answer = `Для внутреннего отчёта команды о расходах, валюта RUB. Исходник input.json будет в выбранной папке проекта: marker — идентификатор, values — суммы расходов. Нужны ровно result.json и report.md. result.json: marker строго из входа, count — длина values, total — сумма values. report.md — короткий читаемый отчёт с идентификатором и отдельной строкой Total (RUB): <вычисленная сумма>. Требуется сохранение входа без изменений. Никакой сети, делегации, установки, новых доступов, изменения настроек и чужих файлов. В proposal включи file checks для обоих результатов и один command check с точно этой командой, без изменений: ${checkCommand}. Во время исполнения используй read_file/write_file; единственная разрешённая команда terminal — этот check. Не выполняй ничего на этапе интервью. Подготовь соглашение для подтверждения; при необходимости задай ещё один вопрос. Это приёмочный тест реальной модели, не разработка самого Altron.`;
+      await page.getByText('Расширенный ручной ввод', {exact: true}).click();
+      await page.getByLabel('Модель', {exact: true}).fill(model);
+      await page.getByLabel('Провайдер', {exact: true}).fill(provider);
+      await page.getByLabel('Что вы хотите получить?', {exact: true}).fill('Нужен короткий локальный отчёт о расходах из input.json. Сначала уточни потребность вопросом, затем предложи проверяемый план. До моего подтверждения файлов не создавай.');
+      await page.getByRole('button', {name: 'Начать интервью', exact: true}).click();
+      await page.locator('[data-mission-id]').waitFor();
+      const deadline = Date.now() + 600000;
+      let mission;
+      let answers = 0;
+      while (Date.now() < deadline) {
+        mission = await readMission();
+        await fs.writeFile(path.join(evidence, 'mission.json'), JSON.stringify(mission, null, 2));
+        if (mission.status === 'awaiting_approval') break;
+        assert.ok(!['blocked', 'unknown', 'cancelled'].includes(mission.status), mission.blocker);
+        if (mission.status === 'waiting') {
+          assert.ok(answers < 3, 'Interview exceeded the authorized test budget');
+          await page.getByLabel('Ответ на вопрос', {exact: true}).fill(answer);
+          await page.getByRole('button', {name: 'Сохранить ответ', exact: true}).click();
+          answers += 1;
+        }
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      assert.equal(mission.status, 'awaiting_approval', mission.blocker);
+      assert.ok(answers > 0, 'A real clarification must precede approval');
+      assert.deepEqual((await fs.readdir(projectDirectory)).sort(), ['input.json']);
+      assert.deepEqual(mission.proposal.deliverables.map(row => row.path).sort(), ['report.md', 'result.json']);
+      assert.equal(mission.proposal.checks.filter(row => row.kind === 'command').length, 1);
+      assert.ok(mission.proposal.checks.some(row => row.kind === 'command' && row.command === checkCommand), 'Only the independently specified read-only verifier can be approved');
+      assert.deepEqual(mission.connection, {model, provider, profile});
+      await page.getByLabel('Папка проекта — выберите явно', {exact: true}).fill(projectDirectory);
+      await page.getByLabel('Рабочие ходы (1–200)', {exact: true}).fill('3');
+      await page.getByLabel('Часы (1–168)', {exact: true}).fill('1');
+      await page.getByRole('button', {name: 'Подтвердить и начать', exact: true}).click();
+      let nativeApprovals = 0;
+      while (Date.now() < deadline) {
+        mission = await readMission();
+        await fs.writeFile(path.join(evidence, 'mission.json'), JSON.stringify(mission, null, 2));
+        if (['ready', 'blocked', 'unknown', 'cancelled'].includes(mission.status)) break;
+        const turn = mission.turns.at(-1);
+        if (turn.runtime_id && turn.status === 'running') {
+          const pending = await page.evaluate(async session_id => {
+            try {return await window.__HERMES_PLUGIN_SDK__.host.request('approval.pending', {session_id});}
+            catch (error) {if (error.message === 'session not found') return {approvals: []}; throw error;}
+          }, turn.runtime_id);
+          for (const request of pending.approvals) {
+            assert.equal(request.command, checkCommand, 'Unexpected command requires separate owner review');
+            const approved = await page.evaluate(({session_id, request_id}) => window.__HERMES_PLUGIN_SDK__.host.request('approval.respond', {session_id, request_id, choice: 'once', all: false}), {session_id: turn.runtime_id, request_id: request.request_id});
+            assert.equal(approved.resolved, 1);
+            nativeApprovals += 1;
+          }
+        }
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      assert.equal(mission.status, 'ready', mission.blocker);
+      assert.ok(mission.verification.every(row => row.passed));
+      assert.ok(mission.verification.some(row => row.source === 'terminal_receipt' && row.exit_code === 0));
+      assert.deepEqual(await fs.readFile(path.join(projectDirectory, 'input.json')), inputBytes);
+      assert.deepEqual((await fs.readdir(projectDirectory)).sort(), ['input.json', 'report.md', 'result.json']);
+      const verified = await execFileAsync(python, ['-c', code], {cwd: projectDirectory, env, windowsHide: true, encoding: 'utf8'});
+      assert.match(verified.stdout, /ACCEPTANCE_OK/);
+      for (const artifact of mission.artifacts) assert.equal(artifact.sha256, createHash('sha256').update(await fs.readFile(path.join(projectDirectory, artifact.path))).digest('hex'));
+      assert.deepEqual(uiErrors, []);
+      await page.getByText('Готово по подтверждённым проверкам. Это не означает, что пользователь уже принял результат.', {exact: true}).waitFor();
+      await page.locator('[data-mission-id]').screenshot({path: path.join(evidence, 'autonomous-result.png')});
+      await fs.writeFile(path.join(evidence, 'execution-backend.log'), backendLog);
+      await app.close(); app = null;
+      await stopBackend(); await startBackend();
+      app = await _electron.launch(launchOptions);
+      page = await app.firstWindow({timeout: 60000});
+      await page.waitForFunction(expected => window.__HERMES_PLUGIN_SDK__?.host.state.profile.get() === expected, profile);
+      await page.getByRole('button', {name: 'Altron', exact: true}).click();
+      await page.getByRole('button', {name: /Готово по проверкам/}).click();
+      await page.getByText('Готово по подтверждённым проверкам. Это не означает, что пользователь уже принял результат.', {exact: true}).waitFor();
+      assert.deepEqual(await readMission(), mission, 'A completed autonomous result must not replay after restart');
+      assert.deepEqual(await fs.readFile(path.join(home, 'config.yaml')), defaultConfig);
+      const afterUi = await fs.readFile(originalUiPath).catch(error => {if (error.code === 'ENOENT') return null; throw error;});
+      assert.deepEqual(afterUi, originalUi);
+      await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify({passed: true, autonomousMode: true, realLanguageModel: true, deterministicModelFixture: false, model, provider, archiveSha256, answers, workTurns: mission.turns.filter(row => row.phase === 'work').length, nativeApprovals, nativeSafetyDisabled: false, verifiedFiles: mission.artifacts, independentlyExecutedVerifier: true, originalInputPreserved: true, preservedAfterDesktopRestart: true, defaultConfigUnchanged: true, originalDesktopUiUnchanged: true, separateReviewerLaunched: false, credentialFilesCopied: false}, null, 2));
+      return;
+    }
     await page.getByRole('button', {name: 'Ручной режим', exact: true}).click();
     await page.getByLabel('Название проекта', {exact: true}).fill('Live acceptance');
     await page.getByLabel('Папка проекта', {exact: true}).fill(projectDirectory);
