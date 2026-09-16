@@ -25,7 +25,7 @@ Hermes `session.resume` is not used for observation or recovery: it may perform 
 
 ## Data ownership and compatibility
 
-Use the existing profile-scoped `altron.db`; no second state database, personal-data import, or synchronization service. Add mission documents and unique session bindings. Raise the database schema version to 2 because old maintenance tools cannot safely account for autonomous work. The current Store and maintenance code must read schemas 1 and 2, migrate schema 1 transactionally, and preserve all old projects/tasks/runs. Older code must fail closed on schema 2, not treat it as idle. A rollback restores the matching pre-upgrade database snapshot; the updated maintenance package is required for this release.
+Use the existing profile-scoped `altron.db`; no second state database, personal-data import, or synchronization service. Add mission documents and unique session bindings. Raise the database schema version to 2 because old maintenance tools cannot safely account for autonomous work. The current Store and maintenance code must read schemas 1 and 2, migrate schema 1 transactionally, and preserve all old projects/tasks/runs. Older code must fail closed on schema 2, not treat it as idle. Maintenance keeps its existing no-data-rewind contract: code rollback never silently restores an old database over newer user work. Rollback across an incompatible database version must stop before changing code and preserve both the current database and backup. A matching updated maintenance package is required for this release.
 
 A mission document contains:
 

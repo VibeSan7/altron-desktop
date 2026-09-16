@@ -16,7 +16,7 @@
 - English repository documentation; Russian translation only for README.
 - No unapproved publication, spending, new credentials, or separate reviewing model.
 - Preserve unknown-execution safety, maintenance blocking, exact model/provider identifiers, and manual user-acceptance semantics.
-- New database schema 2; transactional migration from 1; rollback restores its matching database snapshot.
+- New database schema 2; transactional migration from 1; compatible rollback preserves data, and incompatible cross-schema rollback fails before modifying code.
 - Default approved work limits: 12 work turns and 168 elapsed hours, not a dollar limit.
 - Write and observe failing behavior tests before each implementation. Re-run the full relevant regression suite after each component.
 - Implement inline; the owner delegated ordinary technical decisions and already approved the product flow. Do not stop at this plan or ask them to manage individual steps.
@@ -90,7 +90,7 @@ def test_model_completion_without_report_is_not_ready(bound_mission):
 - [ ] Write failing TestClient tests for create/read/answer/bind/approve/cancel/recover/revise, strict extra-field rejection and stale revisions. Assert reads do not launch models.
 - [ ] Implement the router and controller wake-up only after a persisted user action/approved intent.
 - [ ] Add maintenance refusal tests for every potentially active autonomous state, including unknown and cancellation requested; safe unapproved interviews remain backup-compatible.
-- [ ] Update schema compatibility checks and test schema-1 upgrade, complete backup and matching rollback. Do not weaken existing run/team checks.
+- [ ] Update schema compatibility checks and test schema-1 upgrade, complete backup, compatible rollback and fail-closed incompatible rollback. Do not weaken existing run/team checks.
 - [ ] Run the full portable Python suite and commit.
 
 ## Task 5: Primary interview-to-result UI

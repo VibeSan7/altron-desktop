@@ -118,6 +118,7 @@ test(process.env.ALTRON_LIVE_TEAM === '1' ? 'an approved team hands off verified
     await toggle.waitFor({timeout: 30000});
     if (await toggle.getAttribute('aria-checked') !== 'true') await toggle.click();
     await page.getByRole('button', {name: 'Altron', exact: true}).click();
+    await page.getByRole('button', {name: 'Ручной режим', exact: true}).click();
     await page.getByLabel('Название проекта', {exact: true}).fill('Live acceptance');
     await page.getByLabel('Папка проекта', {exact: true}).fill(projectDirectory);
     await page.getByRole('button', {name: 'Создать проект', exact: true}).click();

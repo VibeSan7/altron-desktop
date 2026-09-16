@@ -50,10 +50,19 @@ test('Altron runs in the real Desktop with an empty, isolated profile', {timeout
     await fs.access(path.join(home, 'profiles/altron/plugins/altron/plugin.yaml'));
     await app.close();
     app = null;
+    const catalogSelection = {model: 'qa/exact-model:v1', provider: 'custom:qa-local'};
+    for (const [key, value] of [
+      ['custom_providers', JSON.stringify([{name: 'QA Local', base_url: 'http://127.0.0.1:1/v1', models: [catalogSelection.model]}])],
+      ['model.default', catalogSelection.model], ['model.provider', catalogSelection.provider],
+    ]) {
+      await promisify(execFile)(env.HERMES_DESKTOP_PYTHON, ['-m', 'hermes_cli.main', 'config', 'set', key, value], {
+        cwd: core, env: {...env, HERMES_HOME: path.join(home, 'profiles/altron')}, windowsHide: true,
+      });
+    }
     app = await _electron.launch({executablePath: require('electron'), args: [desktop, '--local'], cwd: root, env, timeout: 45000});
     page = await app.firstWindow({timeout: 45000});
     const setupLater = page.getByRole('button', {name: /Выберу провайдера позже|Choose.*later|Set up later/i});
-    if (await setupLater.isVisible()) await setupLater.click();
+    await page.addLocatorHandler(setupLater, () => setupLater.click());
     await page.getByRole('button', {name: /^(Capabilities|Возможности)$/}).click();
     const plugins = page.getByText(/^(Plugins|Плагины)$/);
     await plugins.first().click();
@@ -71,6 +80,14 @@ test('Altron runs in the real Desktop with an empty, isolated profile', {timeout
       return {routesArea: sdk.ROUTES_AREA, sidebarArea: sdk.SIDEBAR_NAV_AREA, gateway: sdk.host.state.gateway.get(), profile: sdk.host.state.profile.get(), sdkFunctions: Object.keys(sdk).filter(key => /registry|contrib|plugin/i.test(key))};
     }), null, 2));
     await page.getByRole('heading', {name: 'Altron', exact: true}).waitFor();
+    await page.getByRole('button', {name: 'Ручной режим', exact: true}).click();
+    await page.getByRole('button', {name: 'Автономный проект', exact: true}).click();
+    await page.getByRole('heading', {name: 'Начнём с вашей идеи', exact: true}).waitFor();
+    await page.getByLabel('Что вы хотите получить?', {exact: true}).fill('Saved idea, not an execution request');
+    await page.getByRole('button', {name: 'Ручной режим', exact: true}).click();
+    await page.getByRole('button', {name: 'Автономный проект', exact: true}).click();
+    assert.equal(await page.getByLabel('Что вы хотите получить?', {exact: true}).inputValue(), 'Saved idea, not an execution request');
+    await page.getByRole('button', {name: 'Ручной режим', exact: true}).click();
     const alpha = path.join(root, 'Alpha');
     const beta = path.join(root, 'Beta');
     await fs.mkdir(beta);
@@ -85,6 +102,18 @@ test('Altron runs in the real Desktop with an empty, isolated profile', {timeout
     await fs.access(alpha);
     await page.getByRole('button', {name: 'Создать проект', exact: true}).click();
     await page.getByRole('heading', {name: 'Alpha', exact: true}).waitFor();
+    const sessionsBeforeSelection = await page.evaluate(() => window.__HERMES_PLUGIN_SDK__.host.request('session.list', {profile: 'altron', limit: 100}));
+    await page.getByLabel('Настроенное подключение', {exact: true}).selectOption(catalogSelection.provider);
+    await page.getByLabel('Модель из каталога', {exact: true}).selectOption(catalogSelection.model);
+    await page.getByRole('button', {name: 'Использовать текущее подключение Hermes', exact: true}).click();
+    await page.getByText('Расширенный ручной ввод', {exact: true}).click();
+    assert.equal(await page.getByLabel('Модель', {exact: true}).inputValue(), catalogSelection.model);
+    assert.equal(await page.getByLabel('Провайдер', {exact: true}).inputValue(), catalogSelection.provider);
+    await page.getByText('Расширенный ручной ввод', {exact: true}).click();
+    assert.equal(await page.getByLabel('Настроенное подключение', {exact: true}).inputValue(), catalogSelection.provider);
+    assert.equal(await page.getByLabel('Модель из каталога', {exact: true}).inputValue(), catalogSelection.model);
+    const sessionsAfterSelection = await page.evaluate(() => window.__HERMES_PLUGIN_SDK__.host.request('session.list', {profile: 'altron', limit: 100}));
+    assert.deepEqual(sessionsAfterSelection, sessionsBeforeSelection, 'Choosing a connection must not create or run a session');
     await page.getByRole('button', {name: 'Заполнить учебный пример', exact: true}).click();
     assert.match(await page.getByLabel('Какой результат нужен', {exact: true}).inputValue(), /index.html/);
     assert.equal(await page.locator('article[data-task-id]').count(), 0);
@@ -162,10 +191,11 @@ test('Altron runs in the real Desktop with an empty, isolated profile', {timeout
     page = await app.firstWindow({timeout: 45000});
     await page.getByRole('button', {name: 'Altron', exact: true}).waitFor({timeout: 60000});
     const later = page.getByRole('button', {name: /Выберу провайдера позже|Choose.*later|Set up later/i});
-    if (await later.isVisible()) await later.click();
+    await page.addLocatorHandler(later, () => later.click());
     await page.getByRole('button', {name: 'altron', exact: true}).click();
     await page.waitForFunction(() => window.__HERMES_PLUGIN_SDK__?.host.state.profile.get() === 'altron');
     await page.getByRole('button', {name: 'Altron', exact: true}).click();
+    await page.getByRole('button', {name: 'Ручной режим', exact: true}).click();
     await page.getByRole('heading', {name: 'Alpha', exact: true}).waitFor();
     await page.locator('p').filter({hasText: /^Alpha decision$/}).waitFor();
     await page.getByText('План согласован', {exact: true}).waitFor();
@@ -244,6 +274,7 @@ test('Altron runs in the real Desktop with an empty, isolated profile', {timeout
     await app.close(); app = null;
     app = await _electron.launch({executablePath: require('electron'), args: [desktop, '--local'], cwd: root, env, timeout: 45000});
     page = await app.firstWindow({timeout: 45000});
+    await page.addLocatorHandler(page.getByRole('button', {name: /Выберу провайдера позже|Choose.*later|Set up later/i}), locator => locator.click());
     await page.waitForFunction(() => window.__HERMES_PLUGIN_SDK__?.host.state.profile.get() === 'altron');
     await page.getByRole('button', {name: 'Altron', exact: true}).click();
     await page.getByText('Обслуживание Altron', {exact: true}).click();
@@ -256,12 +287,14 @@ test('Altron runs in the real Desktop with an empty, isolated profile', {timeout
     await app.close(); app = null;
     app = await _electron.launch({executablePath: require('electron'), args: [desktop, '--local'], cwd: root, env, timeout: 45000});
     page = await app.firstWindow({timeout: 45000});
+    await page.addLocatorHandler(page.getByRole('button', {name: /Выберу провайдера позже|Choose.*later|Set up later/i}), locator => locator.click());
     await page.waitForFunction(() => window.__HERMES_PLUGIN_SDK__?.host.state.profile.get() === 'altron');
     await page.getByRole('button', {name: 'Altron', exact: true}).click();
+    await page.getByRole('button', {name: 'Ручной режим', exact: true}).click();
     await page.getByText('Beta task', {exact: true}).waitFor();
     assert.deepEqual(await readProjects(), projectsBefore);
     assert.deepEqual(await fs.readFile(path.join(profileHome, 'config.yaml')), configBefore);
-    await fs.writeFile(path.join(root, 'ui-checks.json'), JSON.stringify({folderCreatedThroughUI: true, demoDoesNotCreateOrRun: true, cancellationAndRevision: true, archiveReversalAndSearch: true, teamCancelledAndReapproved: true, profileArchiveImportedThroughUI: true, nativeDesktop: true, realBackend: true, syntheticProjects: 2, projectSeparation: true, approvedPlan: true, restoredAfterDesktopRestart: true, invalidProviderRejected: true, inferenceTested: false, maintenanceApplyRollbackThroughUI: true, maintenancePackage: 'same-version-reinstall', databaseAndSettingsPreserved: true, maintenanceRestartVerified: true}));
+    await fs.writeFile(path.join(root, 'ui-checks.json'), JSON.stringify({customConnectionCatalog: true, exactCurrentSelection: true, connectionSelectionNoSession: true, folderCreatedThroughUI: true, demoDoesNotCreateOrRun: true, cancellationAndRevision: true, archiveReversalAndSearch: true, teamCancelledAndReapproved: true, profileArchiveImportedThroughUI: true, nativeDesktop: true, realBackend: true, syntheticProjects: 2, projectSeparation: true, approvedPlan: true, restoredAfterDesktopRestart: true, invalidProviderRejected: true, inferenceTested: false, maintenanceApplyRollbackThroughUI: true, maintenancePackage: 'same-version-reinstall', databaseAndSettingsPreserved: true, maintenanceRestartVerified: true}));
   } finally {
     try {
       if (page && !page.isClosed()) await fs.writeFile(path.join(root, 'final-dom.json'), JSON.stringify({url: page.url(), text: (await page.locator('body').innerText()).slice(0, 12000), events: await page.evaluate(() => window.__altronQAEvents || []), buttons: await page.getByRole('button').allTextContents()}, null, 2));

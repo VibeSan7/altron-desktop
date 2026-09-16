@@ -4,7 +4,10 @@ from contextlib import closing, contextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
+import importlib
 import importlib.util
+import sys
+from types import ModuleType
 import json
 import os
 from pathlib import Path
@@ -90,6 +93,8 @@ def current_task(project, run):
 class Store:
     def __init__(self, root, *, guard=None):
         self.guard = guard
+        if self.guard:
+            self.guard()
         self.root = Path(root)
         if self.root.is_symlink():
             raise AltronError("data_directory_is_link")
@@ -98,15 +103,20 @@ class Store:
         if self.path.is_symlink():
             raise AltronError("database_is_link")
         with closing(self.connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            if self.guard:
+                self.guard()
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1):
+            if version not in (0, 1, 2):
                 raise AltronError("unsupported_data_version")
             db.execute("CREATE TABLE IF NOT EXISTS altron_projects (id TEXT PRIMARY KEY, document TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS altron_sessions (runtime_id TEXT PRIMARY KEY, stored_id TEXT UNIQUE NOT NULL, project_id TEXT NOT NULL REFERENCES altron_projects(id), run_id TEXT NOT NULL UNIQUE)")
-            db.execute("PRAGMA user_version=1")
             db.execute("CREATE TABLE IF NOT EXISTS altron_workspace (singleton INTEGER PRIMARY KEY CHECK(singleton=1), id TEXT NOT NULL, selected_project_id TEXT REFERENCES altron_projects(id))")
             db.execute("INSERT OR IGNORE INTO altron_workspace VALUES (1, ?, NULL)", (uuid4().hex,))
             db.execute("CREATE TABLE IF NOT EXISTS altron_runtime (singleton INTEGER PRIMARY KEY CHECK(singleton=1), id TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS altron_missions (id TEXT PRIMARY KEY, document TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS altron_mission_sessions (runtime_id TEXT PRIMARY KEY, stored_id TEXT UNIQUE NOT NULL, mission_id TEXT NOT NULL REFERENCES altron_missions(id), turn_id TEXT UNIQUE NOT NULL)")
+            db.execute("PRAGMA user_version=2")
 
     def connect(self):
         db = sqlite3.connect(self.path, timeout=10)
@@ -167,7 +177,7 @@ class Store:
             db.execute("UPDATE altron_workspace SET selected_project_id=? WHERE singleton=1", (project_id,))
         return self.workspace()
 
-    def create_project(self, name, directory):
+    def insert_project(self, db, name, directory):
         name = text(name, "name", 200)
         raw = Path(text(directory, "directory", 4096))
         if not raw.is_absolute():
@@ -181,16 +191,19 @@ class Store:
         if resolved == resolved.parent or self.root.resolve().is_relative_to(resolved):
             raise AltronError("directory_too_broad")
         project = {"id": uuid4().hex, "name": name, "directory": str(resolved), "created_at": now(), "tasks": [], "runs": [], "decisions": []}
+        for row in db.execute("SELECT document FROM altron_projects"):
+            existing = Path(json.loads(row[0])["directory"])
+            if resolved.is_relative_to(existing) or existing.is_relative_to(resolved):
+                raise AltronError("project_overlap")
+        db.execute("INSERT INTO altron_projects VALUES (?, ?)", (project["id"], json.dumps(project, ensure_ascii=False)))
+        return project
+
+    def create_project(self, name, directory):
         with closing(self.connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
             if self.guard:
                 self.guard()
-            for row in db.execute("SELECT document FROM altron_projects"):
-                existing = Path(json.loads(row[0])["directory"])
-                if resolved.is_relative_to(existing) or existing.is_relative_to(resolved):
-                    raise AltronError("project_overlap")
-            db.execute("INSERT INTO altron_projects VALUES (?, ?)", (project["id"], json.dumps(project, ensure_ascii=False)))
-        return project
+            return self.insert_project(db, name, directory)
 
     def create_task(self, project_id, goal, acceptance):
         task = {"id": uuid4().hex, "goal": text(goal, "goal"), "acceptance": text(acceptance, "acceptance"), "status": "draft", "plan": "", "created_at": now(), "artifacts": [], "summary": "", "acceptance_review": None}
@@ -713,7 +726,8 @@ def get_maintenance():
         spec.loader.exec_module(module)
         _MAINTENANCE_MODULE = module
     home = get_hermes_home()
-    Store(home / "altron")
+    if not (home / "altron/altron.db").exists():
+        Store(home / "altron")
     desktop_home = home.parent.parent if home.parent.name == "profiles" else home
     try:
         service = _MAINTENANCE_MODULE.Maintenance(home, desktop_home)
@@ -748,7 +762,27 @@ def check_maintenance(service):
 
 def get_store():
     service = get_maintenance()
-    return Store(service.profile_data, guard=lambda: check_maintenance(service))
+    try:
+        return Store(service.profile_data, guard=lambda: check_maintenance(service))
+    except AltronError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+def mission_component(name):
+    directory = Path(__file__).resolve().parent
+    package_name = '_altron_dashboard_' + hashlib.sha256(str(directory).encode()).hexdigest()[:16]
+    package = ModuleType(package_name)
+    package.__path__ = [str(directory)]
+    sys.modules.setdefault(package_name, package)
+    return importlib.import_module(package_name + '.' + name)
+
+
+def get_missions(store):
+    return mission_component('missions').MissionStore(store)
+
+
+def get_mission_controller(missions):
+    return mission_component('autonomous_runtime').controller_for(missions, desktop_services())
 
 
 def call(function, *args):
@@ -982,3 +1016,8 @@ def record_terminal(project_id: str, run_id: str, body: TerminalInput, store=Dep
 @router.post("/projects/{project_id}/tasks/{task_id}/accept")
 def accept(project_id: str, task_id: str, body: ReviewInput, store=Depends(get_store)):
     return call(store.accept, project_id, task_id, body.review)
+
+
+router.include_router(mission_component('mission_api').create_router(
+    get_store, get_missions, lambda missions: get_mission_controller(missions),
+    mission_component('autonomous_runtime').EPOCH))

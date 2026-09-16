@@ -46,7 +46,7 @@ jobs:
                   assert not Path(target).is_absolute() and '..' not in Path(target).parts
                   assert target not in contents
                   contents[target] = path.read_bytes()
-              release = {'format': 1, 'version': manifest['version'], 'data_version': 1,
+              release = {'format': 1, 'version': manifest['version'], 'data_version': manifest['data_version'],
                          'files': {target: hashlib.sha256(data).hexdigest() for target, data in contents.items()}}
               contents['release.json'] = json.dumps(release, ensure_ascii=False, sort_keys=True).encode('utf-8')
               with archive.open('wb') as output:
@@ -61,6 +61,33 @@ jobs:
               checksums.append(f"{digest}  {archive.name}\n")
               print(f"Built {archive.name}: {digest}")
           (out / 'SHA256SUMS.txt').write_text(''.join(checksums), encoding='utf-8')
+      - name: Build handoff kit
+        shell: python
+        run: |
+          import hashlib, json, zipfile
+          from pathlib import Path
+          root = Path.cwd()
+          out = root / 'dist'
+          manifest = json.loads((root / 'packaging' / 'manifest.json').read_text(encoding='utf-8'))
+          version = manifest['version']
+          files = {name: root / name for name in ('README.md', 'README.ru.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md')}
+          files.update({path.relative_to(root).as_posix(): path for path in (root / 'docs').rglob('*')
+                        if path.is_file() and path.suffix in {'.md', '.json'}})
+          for name in (f'altron-{version}.tar.gz', f'altron-maintenance-{version}.tar.gz', 'SHA256SUMS.txt'):
+              files[name] = out / name
+          kit = out / f'altron-kit-{version}.zip'
+          with zipfile.ZipFile(kit, 'w') as bundle:
+              for name, path in sorted(files.items()):
+                  assert path.is_file() and not path.is_symlink()
+                  assert path.resolve().is_relative_to(root.resolve())
+                  entry = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+                  entry.create_system = 3
+                  entry.external_attr = 0o100644 << 16
+                  entry.compress_type = zipfile.ZIP_DEFLATED
+                  bundle.writestr(entry, path.read_bytes())
+          digest = hashlib.sha256(kit.read_bytes()).hexdigest()
+          (out / 'KIT_SHA256SUMS.txt').write_text(f'{digest}  {kit.name}\n', encoding='utf-8')
+          print(f'Built {kit.name}: {digest}')
       - name: Portable API and package tests
         run: python -m pytest -c altron/pytest.ini altron/tests --ignore=altron/tests/test_plugin.py --ignore=altron/tests/test_native_loader.py --ignore=altron/tests/test_profile_import.py --junitxml=dist/pytest.xml
         env:

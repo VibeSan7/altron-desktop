@@ -1,4 +1,5 @@
 import {createActions} from './actions.mjs';
+import {createMissionView} from './mission-view.mjs';
 import {createTeamViews} from './team-view.mjs';
 import {createMaintenanceView} from './maintenance-view.mjs';
 import {createWorkspaceTools, demoTask, projectSummary, usageText, elapsedText} from './workspace-tools.mjs';
@@ -7,7 +8,7 @@ import {createTaskControls, runUnsettled} from './task-controls.mjs';
 const statuses = {cancelled: 'Отменено пользователем', team_waiting: 'Передача между шагами команды', interrupted: 'Выполнение остановлено', draft: 'Нужен план', approved: 'План согласован', launching: 'Подготовка запуска', planning: 'Altron составляет план', running: 'В работе', reviewing: 'Идёт проверка', review: 'Нужна приёмка', done: 'Принято пользователем', failed: 'Остановлено с ошибкой', unknown: 'Состояние не подтверждено', cancel_requested: 'Запрошена остановка', reported: 'Результат передан', prepared: 'Запуск подготовлен'};
 const roles = {technical: 'Техническая работа', business: 'Исследования и бизнес', memory: 'Решения и документация', altron: 'Altron — составить план', reviewer: 'Отдельный проверяющий'};
 const errors = {runtime_state_changed: 'Во время сверки состояние запуска изменилось. Ничего не перезапускалось; обновите состояние и проверьте снова.', runtime_unavailable: 'Не удалось подключиться к проверке исполнений Hermes. Блокировка сохранена; перезапустите Hermes и повторите проверку состояния, не запуск задания.', runtime_scope_mismatch: 'Запуск относится к другой папке или профилю. Он не изменён.', runtime_state_unconfirmed: 'Hermes не подтвердил безопасное завершение. Блокировка сохранена.', run_budget_exhausted: 'Исчерпан разрешённый лимит запусков проекта. Измените его явно в разделе ограничений.', task_archived: 'Сначала верните задачу из архива.', scope_changed: 'Профиль или проект сменился. Продолжение операции остановлено.', model_mismatch: 'Hermes вернул другую модель или провайдера. Задание не отправлено.', model_and_provider_required: 'Выберите модель и укажите её провайдера.', project_overlap: 'Эта папка уже относится к другому проекту. Выберите отдельную папку.', directory_not_found: 'Папка не найдена. Создайте её в Проводнике и укажите полный путь.', directory_must_be_absolute: 'Нужен полный путь к существующей папке.', directory_too_broad: 'Нужна отдельная папка проекта, не весь диск или профиль Hermes.', artifact_changed: 'Файл изменился после передачи результата. Приёмка заблокирована.', artifact_unavailable: 'Один из файлов недоступен. Приёмка заблокирована.', run_state_unconfirmed: 'Не удалось подтвердить состояние запуска. Повторной отправки нет.', run_already_starting: 'Этот запуск уже обрабатывается.'};
-const stack = {display: 'grid', gap: 12};
+const stack = {display: 'grid', gap: 12, minWidth: 0, overflowWrap: 'anywhere'};
 const row = {display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center'};
 const panel = {...stack, padding: 16, border: '1px solid var(--ui-stroke-secondary)', borderRadius: 10};
 const muted = {color: 'var(--ui-text-secondary)', fontSize: 13};
@@ -19,6 +20,7 @@ export function createView(React, sdk, ctx, coordinator) {
   const paragraph = value => h('p', {style: {whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0}}, value);
 
   const Maintenance = createMaintenanceView(React, sdk, ctx);
+  const MissionView = createMissionView(React, sdk, ctx);
   const {Connections, FolderPicker, Diagnostics} = createWorkspaceTools(React, sdk, ctx);
   const TaskControls = createTaskControls(React, sdk, ctx);
   const {TeamSettings, TaskTeam} = createTeamViews(React, sdk, ctx, coordinator);
@@ -132,6 +134,7 @@ export function createView(React, sdk, ctx, coordinator) {
   }
 
   function Workspace({profile, gateway, epoch, connectionId}) {
+    const [mode, setMode] = useState('mission');
     const queryClient = useQueryClient();
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
@@ -179,16 +182,16 @@ export function createView(React, sdk, ctx, coordinator) {
       });
     };
     return h('main', {style: {...stack, padding: 24, maxWidth: 1080, margin: '0 auto', overflow: 'auto', height: '100%'}},
-      h('header', null, h('h1', null, 'Altron'), h('p', {style: muted}, 'Проект → задача → согласованный план → работа → проверка.')),
+      h('header', null, h('h1', null, 'Altron'), h('p', {style: muted}, 'Расскажите об идее. Altron уточнит задачу, выполнит работу и покажет проверенный результат.')),
       gateway !== 'open' && h('p', {role: 'status'}, 'Нет подключения к Hermes. Действия с задачами недоступны.'),
       workspace.isLoading && h('p', {role: 'status'}, 'Загрузка Altron…'),
       workspace.error && h('p', {role: 'alert'}, 'API Altron недоступен. Проверьте, что Python-часть пакета включена в этом профиле Hermes.'),
       error && h('p', {role: 'alert'}, error),
-      h('section', {style: panel}, h('strong', null, 'Первый результат — по шагам'), paragraph('1. Выберите отдельную папку и создайте проект. 2. Выберите своё подключение Hermes. 3. Опишите результат и проверку (или заполните пример). 4. Согласуйте план. 5. Подтвердите запуск и проверьте созданные файлы.')),
-      h(Maintenance, {queryKey, gateway}),
-      h(Diagnostics, {perform, busy: busy || gateway !== 'open'}),
+      h('nav', {style: row, 'aria-label': 'Режим Altron'}, ...[['mission', 'Автономный проект'], ['manual', 'Ручной режим']].map(([value, label]) => h(Button, {key: value, variant: mode === value ? 'secondary' : 'ghost', 'aria-pressed': mode === value, onClick: () => setMode(value)}, label))),
       h(Button, {disabled: busy || gateway !== 'open', onClick: refresh}, 'Обновить состояние'),
-      workspace.data && h(React.Fragment, null,
+      workspace.data && h(Connections, {profile, queryKey, gateway, model, provider, setModel, setProvider, busy}),
+      workspace.data && mode === 'mission' && h(MissionView, {key: workspace.data.workspace_id, profile, gateway, connectionId, queryKey, workspaceId: workspace.data.workspace_id, model, provider}),
+      workspace.data && mode === 'manual' && h(React.Fragment, null,
         workspace.data.projects.length > 0 && field('Текущий проект', h('select', {'aria-label': 'Текущий проект', value: pid || '', disabled: busy, onChange: e => perform(() => ctx.rest(`/projects/${e.target.value}/select`, {method: 'POST'})), style: {color: 'inherit', background: 'var(--ui-background)', padding: 10}},
           h('option', {value: '', disabled: true}, 'Выберите проект'), ...workspace.data.projects.map(p => h('option', {key: p.id, value: p.id}, p.name)))),
         h('details', {open: workspace.data.projects.length === 0, style: panel}, h('summary', null, 'Добавить проект'),
@@ -198,10 +201,11 @@ export function createView(React, sdk, ctx, coordinator) {
             h(FolderPicker, {directory, onChoose: setDirectory, busy}),
             h('p', {style: muted}, 'Не выбирайте весь диск или папку Hermes. Altron не копирует старые проекты и не создаёт задачи автоматически.'),
             h(Button, {type: 'submit', disabled: busy || !name.trim() || !directory.trim()}, 'Создать проект'))),
-        h(Connections, {profile, queryKey, gateway, model, provider, setModel, setProvider, busy}),
         project.error && h('p', {role: 'alert'}, 'Выбранный проект недоступен. Чужие данные не подставляются.'),
-        pid && project.data?.id === pid && h(Project, {key: pid, project: project.data, perform, actions, busy, model, provider, catalog: catalog.data}),
+        pid && project.data?.id === pid && (project.data.autonomy_id ? paragraph('Этот проект выполняется в автономном режиме. Откройте его в разделе «Автономный проект».') : h(Project, {key: pid, project: project.data, perform, actions, busy, model, provider, catalog: catalog.data})),
       ),
+      h(Maintenance, {queryKey, gateway}),
+      h(Diagnostics, {perform, busy: busy || gateway !== 'open'}),
     );
   }
 

@@ -24,7 +24,7 @@ cancel_pending_plan(project_id: str, task_id: str, reason: str) -> dict
 {"status":"applied","requires_restart":true,"version":"0.3.0","backup_id":"..."}
 ```
 
-`rollback` returns `{"status":"rolled_back","requires_restart":true}`. It restores the previous code, not an older copy of the current `altron.db`.
+`rollback` returns `{"status":"rolled_back","requires_restart":true}`. It restores previous code, not an older copy of the current `altron.db`. It verifies that the current database format matches the backup database format before changing any code. A migration from 1 to 2 therefore blocks code-only rollback to the previous format-1 installation. Applying a package whose `data_version` is older than the current database is also rejected.
 
 `status` returns `status`, `version`, `backup_id`, and `requires_restart`. Normal states are `idle`, `staged`, `applied`, and `rolled_back`. An unfinished, failed, or damaged operation returns `recovery_required`.
 
@@ -45,6 +45,8 @@ The only root is `altron/`. The required `altron/release.json` has exactly this 
 
 Tar and gzip/tar are supported. Gzip decompression is bounded before tar parsing; oversized headers/metadata and an oversized decompressed stream are rejected. Limits: a 16 MiB archive, 128 files, 8 MiB per file, and 32 MiB total. Rejections include traversal, absolute/drive/backslash/NUL paths, duplicates and case-fold collisions, disallowed paths, symlink/hardlink/special/sparse entries, `.env*`, `auth.json`, `credentials.json`, `*.db`, `*.log`, and invalid manifests, versions, or hashes.
 
+Both release data versions 1 and 2 are understood by the 0.5 maintenance component. The 0.5 main archive declares version 2. The new maintenance profile must be used when upgrading a format-1 installation; an older maintenance component rejects version-2 archives. Mission records also participate in `active_operations`: an unsettled turn, unknown execution, prepared turn or queued/running work prevents maintenance. Merely reading maintenance status does not migrate an existing database, and the Store checks its maintenance guard before schema initialization.
+
 ## Journal and backups
 
 The journal is `altron/maintenance/journal.json`, with `schema: 1`:
@@ -63,13 +65,13 @@ The journal is `altron/maintenance/journal.json`, with `schema: 1`:
 
 `events` records the action order and actual old/new SHA-256 values. `backups/<backup_id>/backup.json` records the affected files; old bytes are stored in `code/`, staged new bytes in `new/`, and a verified SQLite copy of `altron.db` is retained. Unknown local files are not deleted.
 
-Applying an update holds an atomic profile lock and a shared Desktop lock. Locks belonging to another process, or left after a crash, are not removed automatically. Validation first checks `user_version=1`, the `altron_projects` structure, and JSON documents. It rejects `prepared`, `running`, `unknown`, `cancel_requested`, `reported`, any session-bound run without a terminal status (including `failed`/`interrupted`), and team states `ready`, `running`, `paused`, or `unknown`. The SQLite write lock is held until replacement/rollback finishes, preventing a new run from slipping between validation and code changes. A SQLite backup is then made using `Connection.backup`, `PRAGMA integrity_check` is run, and code is changed only through `os.replace`.
+Applying an update holds an atomic profile lock and a shared Desktop lock. Locks belonging to another process, or left after a crash, are not removed automatically. Validation first checks `user_version` 1 or 2, the `altron_projects` structure, and JSON documents. It rejects `prepared`, `running`, `unknown`, `cancel_requested`, `reported`, any session-bound run without a terminal status (including `failed`/`interrupted`), and team states `ready`, `running`, `paused`, or `unknown`. The SQLite write lock is held until replacement/rollback finishes, preventing a new run from slipping between validation and code changes. A SQLite backup is then made using `Connection.backup`, `PRAGMA integrity_check` is run, and code is changed only through `os.replace`.
 
 If compensating recovery fails, the journal enters `recovery_required`. A subsequent `status` does not report success. Explicit `rollback` again requires both locks; it does not remove another process's lock, checks compatibility of the current database, and restores only files whose current bytes match the staged new version. For a normal `applied` rollback, all affected files are checked first, so a user-modified file prevents partial restoration from starting. Newly added files are removed only if their hashes still match the installed version.
 
 ## Cancellation, attempts, and recovery
 
-A canceled plan sets both task and team status to `cancelled`. This neither removes history nor hides actual executions: all `runs`, including archived attempts, are still checked before maintenance. A new attempt increments `attempt`, and the previous task record is saved as a snapshot in `attempts`; the SQLite format remains 1.
+A canceled plan sets both task and team status to `cancelled`. This neither removes history nor hides actual executions: all `runs`, including archived attempts, are still checked before maintenance. A new attempt increments `attempt`, and the previous task record is saved as a snapshot in `attempts`; Altron 0.5 uses additive SQLite format 2 for durable mission state; old project documents are preserved.
 
 Recovery is a separate explicit action. The adapter reads the `tui_gateway.server` registry and checks the stored session ID, profile, and folder. An active, awaiting-approval, or building executor is not closed. An old idle runtime is closed through Hermes's normal mechanism so a late submission cannot restart it. Then `active_session_liveness_guard` holds the normal ownership lock until the result is written to Altron. Ownership by another process, an unverifiable OS state, a damaged registry, or an incompatible version does not grant permission. Recovery does not use `session.resume` or `prompt.submit`.
 

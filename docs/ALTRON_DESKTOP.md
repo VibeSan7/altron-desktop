@@ -1,19 +1,27 @@
-# Altron Desktop 0.4 — first results, revisions, and rollback
+# Altron Desktop 0.5 — interview, work and result
 
-This guide applies to **0.4.0-beta.1**. Installation archives are available in the [GitHub release](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.4.0-beta.1). The older 0.3 archive does not contain the new controls described below. See the [verification report](DESKTOP_VERIFICATION.md) for the tested scope of this beta.
+This guide applies to the local **0.5.0-beta.2** candidate. Use its supplied archives and checksums, not the published 0.4 archive. The new default workflow is documented in [Autonomous projects](AUTONOMOUS_PROJECTS.md). See the [verification report](DESKTOP_VERIFICATION.md) for tested scope and limitations.
 
 The current Altron interface is in Russian. This guide describes its actions in English.
 
 ## Installation
 
 1. Install the official [Hermes Desktop](https://hermes-agent.nousresearch.com/docs/user-guide/desktop). Altron does not replace Hermes or include shared paid AI access.
-2. Import `altron-0.4.0-beta.1.tar.gz` with the profile-import button. Do not extract the archive or use GitHub's Source code ZIP.
+2. Import `altron-0.5.0-beta.2.tar.gz` with the profile-import button. Do not extract the archive or use GitHub's Source code ZIP.
 3. Fully close and reopen Desktop. Enable **Desktop: Altron** in the plugins section, select the **altron** profile, and click **Altron** in the bottom bar.
 4. Connect your own account/model in Hermes's built-in settings. Do not enter passwords, verification codes, or keys in Altron.
 
 Import refuses to overwrite an existing profile. If Altron is already installed, use the [upgrade procedure](UPDATING.md) rather than deleting the profile. The working `default` profile is not reconfigured. The package contains no `.env`, `auth.json`, conversations, author projects, or databases. The first screen and first project start empty.
 
-## Your first useful result
+## Start with an idea
+
+The default screen opens a saved interview. Select a configured connection, describe your need, answer the questions, review the proposal, choose a dedicated folder and confirm it once. The backend continues, validates files and command receipts, and repairs failures within your limits. Keep Desktop running. [Read the complete autonomous workflow](AUTONOMOUS_PROJECTS.md).
+
+## Manual workflow
+
+Select the secondary manual-mode button to use the explicit project/task/team controls below. Autonomous projects cannot be edited through the manual project form.
+
+### Your first manual result
 
 1. Enter a project name, such as “Learning page.”
 2. Open the folder picker. Navigate to a suitable directory and choose an existing folder, or enter a new folder name and use the create-and-select action. Then create the project. The full-path field remains available for advanced users. Do not select an entire drive or Hermes's settings directory.

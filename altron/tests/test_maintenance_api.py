@@ -15,7 +15,7 @@ def test_maintenance_http_checks_then_updates_and_requires_restart(tmp_path, mon
     app = FastAPI()
     app.include_router(api.router, prefix="/api/plugins/altron")
     app.dependency_overrides[api.get_maintenance] = lambda: service
-    app.dependency_overrides[api.get_store] = lambda: api.Store(profile / "altron", guard=lambda: api.check_maintenance(service))
+    monkeypatch.setattr(api, "get_maintenance", lambda: service)
     with TestClient(app) as client:
         base = "/api/plugins/altron/maintenance"
         assert client.get(base).json()["requires_restart"] is False

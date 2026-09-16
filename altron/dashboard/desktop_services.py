@@ -70,6 +70,72 @@ def observe_run(run, project, home):
             yield {"state": "active" if active else "stopped", "usage": usage}
 
 
+def _mission_lineage(run, home):
+    known = [value for value in [*run.get('stored_id_history', []), run.get('stored_id')] if value]
+    if not known:
+        raise ValueError('runtime_state_unconfirmed')
+    path = Path(home) / 'state.db'
+    if not path.exists() and not run.get('started_at'):
+        return known
+    try:
+        from hermes_state import SessionDB
+        db = SessionDB(db_path=path, read_only=True)
+        try:
+            root = db.get_session(known[0])
+            if root is None:
+                if run.get('started_at'):
+                    raise ValueError('runtime_state_unconfirmed')
+                return known
+            chain = db.get_compression_chain(known[0])
+            if not chain or not set(known).issubset(chain):
+                raise ValueError('runtime_state_unconfirmed')
+            return chain
+        finally:
+            db.close()
+    except Exception as exc:
+        raise ValueError('runtime_state_unconfirmed') from exc
+
+
+@contextmanager
+def observe_mission_run(run, project, home):
+    if not run.get('stored_id'):
+        if run.get('runtime_id') or run.get('started_at'):
+            raise ValueError('runtime_state_unconfirmed')
+        yield {'state': 'stopped', 'basis': 'not_dispatched', 'usage': {}}
+        return
+    server = _runtime()
+    try:
+        from importlib import import_module
+        registry = import_module('hermes_cli.active_sessions')
+        required = ('_lease_paths', '_FileLock', '_prune_dead', '_read_entries', '_holds_session')
+        if any(not callable(getattr(registry, key, None)) for key in required):
+            raise ValueError('runtime_unavailable')
+    except ImportError as exc:
+        raise ValueError('runtime_unavailable') from exc
+    with server._sessions_lock:
+        chain = _mission_lineage(run, home)
+        sid, session = _session(server, dict(run, stored_id=chain[-1]), project, home)
+        usage = clean_usage(server._session_usage_snapshot(session)) if session is not None else {}
+        if session is not None:
+            busy = (server._session_live_status(sid, session) != 'idle' or session.get('_compute_host_active')
+                    or session.get('hydrating') or session.get('queued_prompt') or session.get('queued_prompts')
+                    or any(getattr(session.get(key), 'is_alive', lambda: False)() for key in ('_run_thread', 'worker', 'slash_worker')))
+            if busy:
+                yield {'state': 'active', 'stored_id': chain[-1], 'usage': usage}
+                return
+            server._close_session_by_id(sid)
+            if sid in server._sessions:
+                raise ValueError('runtime_state_unconfirmed')
+        # A compression can move the lease from an ancestor to its continuation.
+        # Hold Hermes' one registry lock and check the whole lineage, not just its tip.
+        state_path, lock_path = registry._lease_paths(registry_home=home)
+        with registry._FileLock(lock_path):
+            entries = registry._prune_dead(registry._read_entries(state_path, strict=True), strict=True)
+            chain = _mission_lineage(run, home)
+            active = any(registry._holds_session(entries, stored_id) for stored_id in chain)
+            yield {'state': 'active' if active else 'stopped', 'stored_id': chain[-1], 'usage': usage}
+
+
 def run_usage(run, project, home):
     try:
         server = _runtime()

@@ -4,6 +4,8 @@ This is an optional developer check, not an end-user installation guide. Ordinar
 
 `npm run test:live` is skipped by default. It starts only with `ALTRON_LIVE=1` and explicitly provided model, provider, Hermes directory, and runtime settings. It uses the owner's existing connection and may consume their quota or paid tokens. Do not add it to ordinary CI or run it without the connection owner's permission.
 
+This live harness covers the secondary manual/task workflow, including its optional team mode. It does **not** certify the new autonomous interview-to-result workflow. That workflow still needs its own owner-approved real-model acceptance run; the deterministic protocol test below must not be relabeled as that evidence.
+
 ## Boundaries
 
 - A new named profile with the `altron-qa-` prefix and a random ID is created through the standard safe archive extraction into a new name. An existing `altron` is not overwritten.
@@ -52,11 +54,15 @@ ALTRON_LIVE=1 ALTRON_LIVE_TEAM=1 npm run test:live
 
 A run is limited to 15 minutes, with 10 minutes allowed for the model's response. Connections are configured through Hermes, not secret-bearing environment variables in this test. The test does not log in or request a verification code.
 
+## Autonomous protocol test without a paid model
+
+`npm run test:autonomous` uses a deterministic loopback model fixture with a real Hermes Desktop, real gateway and native tools. It tests interview, one project approval, a failed first result, backend-driven repair with the mission UI unmounted, verified files/commands and reopening after restart. The isolated fixture disables automatic AI titles and uses Hermes manual security approvals: the test operator answers only the exact read-only calculation command with a single-use native approval on each attempt. These additional security decisions are counted in the evidence; security is not disabled. It is **not a real language-model quality test**. No credentials or private data are copied. See [AUTONOMOUS_PROJECTS.md](AUTONOMOUS_PROJECTS.md).
+
 ## Testing upgrades without AI
 
-`npm run test:upgrade` requires `ALTRON_JS_HOME`, `ALTRON_PYTHON`, and `ALTRON_OLD_ARCHIVE` — the absolute path to a downloaded archive of an earlier 0.2 or 0.3 release. Verify its SHA-256 against the published release before running. The current version's main and maintenance archives must be built in `dist/`. Run the test separately for each older release. If that version supports team plans, the test also creates an unstarted plan, cancels it through the new maintenance panel, and verifies preservation of the plan/steps without creating executions.
+`npm run test:upgrade` requires `ALTRON_JS_HOME`, `ALTRON_PYTHON`, and `ALTRON_OLD_ARCHIVE` — the absolute path to a downloaded archive of an earlier 0.4 release. Verify its SHA-256 against the published release before running. The current version's main and maintenance archives must be built in `dist/`. Run the test separately for each older release. If that version supports team plans, the test also creates an unstarted plan, cancels it through the new maintenance panel, and verifies preservation of the plan/steps without creating executions.
 
-The test imports the old profile through the real Desktop, creates a project and task, imports the separate maintenance profile, updates code, restarts Desktop, saves a new decision, restores old code through the maintenance profile, and checks that both generations of data remain. Temporary `.env` and `auth.json` contain only synthetic control values; no AI connection is used. Actual API responses are not mocked; only file selection in the system dialog is automated. Evidence is stored in `.hermes/upgrade-…`.
+The test imports the old profile through the real Desktop, creates a project and task, imports the separate maintenance profile, updates code, restarts Desktop, saves a new decision, requests code rollback through the maintenance profile, verifies that format-1 code is rejected after migration to format 2, and checks that current code and both generations of data remain. Same-format apply/rollback is covered separately by `test:native`. Temporary `.env` and `auth.json` contain only synthetic control values; no AI connection is used. Actual API responses are not mocked; only file selection in the system dialog is automated. Evidence is stored in `.hermes/upgrade-…`.
 
 ## Results and retention
 
