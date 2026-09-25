@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "release": "v0.5.0-beta.2",
+  "test_date": "2026-09-25",
+  "platform": "Windows 11",
+  "model": "gpt-5.6-luna",
+  "provider": "openai-codex",
+  "release_archive_sha256": "077affe38d7989ca3cf9a0f54a74328f37a6cbe4cb1f7a024ac84687b48442b1",
+  "passed": true,
+  "autonomous_mode": true,
+  "real_language_model": true,
+  "deterministic_model_fixture": false,
+  "interview_answers": 1,
+  "work_turns": 1,
+  "native_approvals": 1,
+  "native_safety_disabled": false,
+  "verified_outputs": [
+    {
+      "path": "result.json",
+      "sha256": "99b65c63bfbdf20d95754759890175f517838b1016a2adc0691972c6c56d7346",
+      "bytes": 71
+    },
+    {
+      "path": "report.md",
+      "sha256": "651bd35a21384872b454c716c81a36d6508c95ef026afc1ebe9a5ec8bf910039",
+      "bytes": 116
+    }
+  ],
+  "output_summary": {
+    "input_values": [
+      17,
+      29,
+      43
+    ],
+    "count": 3,
+    "total_rub": 89
+  },
+  "assertions": {
+    "independently_executed_verifier": true,
+    "original_input_preserved": true,
+    "preserved_after_desktop_restart": true,
+    "default_config_unchanged": true,
+    "original_desktop_ui_unchanged": true,
+    "separate_reviewer_launched": false,
+    "credential_files_copied": false
+  },
+  "privacy": "Sanitized summary. Local paths, runtime IDs, and raw application data are intentionally omitted."
+}

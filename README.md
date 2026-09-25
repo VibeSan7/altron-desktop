@@ -24,7 +24,7 @@ Altron is an open-source Windows extension for people who want project work to r
 
 **Workflow:** idea → interview → approved contract → work and checks → files for your review.
 
-Public beta **0.5.0-beta.2** adds this **interview → work → result** flow. See the [verification report](docs/DESKTOP_VERIFICATION.md) for actual evidence and limitations. The current interface is in Russian; only the README has a separate Russian translation. Other documentation, issue templates and release notes are in English.
+Public beta **0.5.0-beta.2** adds this **interview → work → result** flow. The published archive completed an explicitly authorized autonomous run with a real model on Windows; see the [verification report](docs/DESKTOP_VERIFICATION.md#real-desktop-authorized-real-model-run) and [sanitized evidence summary](docs/evidence/live-model-0.5.0-beta.2.json). This single run confirms the tested path, not general model quality. The current interface is in Russian; only the README has a separate Russian translation. Other documentation, issue templates and release notes are in English.
 
 ## Download and open — no commands required
 
