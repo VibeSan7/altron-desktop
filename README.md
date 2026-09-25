@@ -24,7 +24,7 @@ Altron is an open-source Windows extension for people who want project work to r
 
 **Workflow:** idea → interview → approved contract → work and checks → files for your review.
 
-Public beta **0.5.0-beta.2** adds this **interview → work → result** flow. The published archive completed an explicitly authorized autonomous run with a real model on Windows; see the [verification report](docs/DESKTOP_VERIFICATION.md#real-desktop-authorized-real-model-run) and [sanitized evidence summary](docs/evidence/live-model-0.5.0-beta.2.json). This single run confirms the tested path, not general model quality. The current interface is in Russian; only the README has a separate Russian translation. Other documentation, issue templates and release notes are in English.
+Public beta **0.5.0-beta.2** adds this **interview → work → result** flow. The published archive completed an explicitly authorized autonomous run with a real model on Windows; see the [verification report](docs/DESKTOP_VERIFICATION.md#real-desktop-authorized-real-model-run) and [sanitized evidence summary](docs/evidence/live-model-0.5.0-beta.2.json). This single run confirms the tested path, not general model quality. The current source supports English and Russian throughout the Altron interface. Other documentation, issue templates and release notes are in English unless stated otherwise.
 
 ## Download and open — no commands required
 
@@ -37,7 +37,7 @@ For a guided first run, use the complete `altron-kit-0.5.0-beta.2.zip`: extract 
 5. Click **Altron** in Desktop's bottom bar to open its workspace tab. On subsequent starts, select the `altron` profile first as well: this package's backend is not enabled in `default`.
 6. Connect your own model using Hermes's built-in settings. In Altron, select the configured connection and a model from the catalog, or use the action that copies the current Hermes connection. Do not enter keys or passwords in Altron fields.
 
-The current Altron interface is in Russian. This documentation describes its actions in English.
+Altron follows the active Hermes language by default. The **Language** selector at the top of the workspace can instead keep Altron in **English** or **Русский**; the manual choice is remembered. The maintenance workspace has the same selector.
 
 Desktop must provide the `host.openWorkspace`, `ctx.rest`, and `host.onEvent` SDK capabilities. Tested build: **Hermes Desktop 0.17.3 with Hermes Agent 0.21.3**, source commit `d84ece48b8552501660be229797e2d2aa4cee8db`; Python 3.11+. Recovery also requires Hermes's runtime registry and cross-process session-ownership checks. If these capabilities are unavailable, Altron keeps the operation blocked rather than assuming execution has stopped.
 

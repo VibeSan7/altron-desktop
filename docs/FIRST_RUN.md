@@ -1,6 +1,6 @@
 # First run and user acceptance
 
-This is the installation and acceptance path for a new Windows 11 user. Altron is an extension of Hermes Desktop, not a standalone Windows application. The interface is currently Russian. See [verification](DESKTOP_VERIFICATION.md) for the exact tested build and known boundaries.
+This is the installation and acceptance path for a new Windows 11 user. Altron is an extension of Hermes Desktop, not a standalone Windows application. The interface supports English and Russian. See [verification](DESKTOP_VERIFICATION.md) for the exact tested build and known boundaries.
 
 ## Before starting
 
@@ -18,6 +18,8 @@ This is the installation and acceptance path for a new Windows 11 user. Altron i
 4. If `altron` already exists, stop this installation path. Follow [UPDATING.md](UPDATING.md); do not delete the existing profile to get past the warning.
 5. Fully close and reopen Desktop. Enable **Desktop: Altron** under Plugins, select the `altron` profile, and open **Altron** from the bottom bar.
 6. Connect your own model in Hermes, then select the connection and exact model in Altron. Never send passwords, verification codes, `.env` or `auth.json` to support.
+
+Altron follows the active Hermes language by default. Use the **Language** selector at the top of the workspace to keep Altron in **English** or **Русский** instead. The selection persists; choose **Hermes** again to resume following Hermes. The separate maintenance workspace provides the same control.
 
 ## Try one small useful project
 
