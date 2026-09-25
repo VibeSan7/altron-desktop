@@ -1,12 +1,30 @@
 # Altron Desktop
 
-English | [Russian](README.ru.md)
+English | [Русский](README.ru.md)
 
-Only this README has a separate Russian translation in `README.ru.md`. All other documentation, issue templates, and release notes are in English only.
+**Turn an idea into an approved AI task and checked files inside Hermes Desktop.**
 
-**From an idea to checked deliverables inside the official Hermes Desktop.**
+Altron is an open-source Windows extension for people who want project work to remain traceable: requirements are saved, execution starts only after approval, and delivered files remain subject to explicit checks and user acceptance.
 
-Public beta **0.5.0-beta.2** adds **interview → work → result**: describe an idea, answer follow-up questions, approve the resulting contract once, then let the backend execute, check and repair within the agreed limits. Download the [public beta release](https://github.com/VibeSan7/altron-desktop/releases/tag/v0.5.0-beta.2), and see the [verification report](docs/DESKTOP_VERIFICATION.md) for actual results and limitations.
+**[Download the beta kit](https://github.com/VibeSan7/altron-desktop/releases/download/v0.5.0-beta.2/altron-kit-0.5.0-beta.2.zip)** · [First-run guide](docs/FIRST_RUN.md) · [Ask a question or share feedback](https://github.com/VibeSan7/altron-desktop/discussions)
+
+> Altron is not a standalone application. It requires the official Hermes Desktop, a configured model connection, and Windows for the currently tested beta.
+
+![Altron workspace inside Hermes Desktop](docs/assets/altron-workspace.png)
+
+<sub>Real Hermes Desktop interface with synthetic test data. No user project or credentials are shown.</sub>
+
+## Why use it instead of a plain chat?
+
+- Start with a need; Altron saves the follow-up interview and turns it into an explicit contract.
+- Review scope, exclusions, deliverables, checks, folder and limits before any project run begins.
+- Keep the project state outside one chat response and inspect the actual files and command receipts.
+- Request a revision without losing the original task, feedback or attempt history.
+- Accept the result yourself: an AI response saying “done” is not treated as completion.
+
+**Workflow:** idea → interview → approved contract → work and checks → files for your review.
+
+Public beta **0.5.0-beta.2** adds this **interview → work → result** flow. See the [verification report](docs/DESKTOP_VERIFICATION.md) for actual evidence and limitations. The current interface is in Russian; only the README has a separate Russian translation. Other documentation, issue templates and release notes are in English.
 
 ## Download and open — no commands required
 
@@ -121,6 +139,6 @@ Integration checks require an installed Hermes. `npm run test:native` also uses 
 
 ## Feedback
 
-Report reproducible problems through [GitHub Issues](https://github.com/VibeSan7/altron-desktop/issues). Include Windows, Hermes, and Altron versions, reproduction steps, and expected versus actual behavior. A GitHub account is required to submit an issue, but not to download. **Do not attach** keys, `.env`, `auth.json`, an entire profile directory, private conversations, or raw logs. Check screenshots for personal data before publishing them.
+Use [GitHub Discussions](https://github.com/VibeSan7/altron-desktop/discussions) for questions, first-run feedback and examples of useful results. Report reproducible problems through [GitHub Issues](https://github.com/VibeSan7/altron-desktop/issues). Include Windows, Hermes, and Altron versions, reproduction steps, and expected versus actual behavior. A GitHub account is required to post, but not to download. **Do not attach** keys, `.env`, `auth.json`, an entire profile directory, private conversations or raw logs. Check screenshots for personal data before publishing them.
 
 [MIT](LICENSE). Hermes and its dependencies have their own terms and are not copied into the Altron archive.
