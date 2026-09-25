@@ -1,4 +1,6 @@
-export function createActions({api, rpc, isCurrent, getConnectionId, getProfile, onEvent, onDispose, onTrackingError, onTerminal, openSession}) {
+import {russianT} from './i18n.mjs';
+
+export function createActions({api, rpc, isCurrent, getConnectionId, getProfile, onEvent, onDispose, onTrackingError, onTerminal, openSession, t = russianT}) {
   const busy = new Set();
   const connectionId = getConnectionId();
   const profile = getProfile();
@@ -63,7 +65,7 @@ export function createActions({api, rpc, isCurrent, getConnectionId, getProfile,
           try {
             await post(`/projects/${encodeURIComponent(projectId)}/runs/${encodeURIComponent(run.id)}/status`, {
               status: submitted ? 'unknown' : 'failed',
-              note: submitted ? 'Ответ на отправку не подтверждён. Автоматического повтора нет.' : 'Запуск остановлен до отправки задания. Модель не подменялась.',
+              note: submitted ? t('actions.submitUnknown') : t('actions.stoppedBeforeSubmit'),
             });
           } catch {
             throw new Error('run_state_unconfirmed', {cause: error});
@@ -77,7 +79,7 @@ export function createActions({api, rpc, isCurrent, getConnectionId, getProfile,
     async cancel({projectId, run}) {
       check();
       await post(`/projects/${encodeURIComponent(projectId)}/runs/${encodeURIComponent(run.id)}/status`, {
-        status: 'cancel_requested', note: 'Пользователь запросил остановку. Завершение ещё не подтверждено.',
+        status: 'cancel_requested', note: t('actions.cancelRequested'),
       });
       check();
       if (run.runtime_id) await rpc('session.interrupt', {session_id: run.runtime_id});

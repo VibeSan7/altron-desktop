@@ -6,6 +6,11 @@ import {resolve} from 'node:path';
 const require = createRequire(resolve(process.env.ALTRON_JS_HOME || process.cwd(), 'package.json'));
 const React = require('react');
 const {renderToStaticMarkup} = require('react-dom/server');
+const {translate} = await import('../ui/i18n.mjs');
+const englishLocalizer = {
+  useI18n: () => ({t: (key, ...args) => translate('en', key, ...args)}),
+  LanguageSelector: () => React.createElement('select', {'aria-label': 'Language'}, React.createElement('option', null, 'English')),
+};
 
 test('team setup and steps show explicit assignments and separate acceptance', async () => {
   let createTeamViews;
@@ -28,6 +33,22 @@ test('team setup and steps show explicit assignments and separate acceptance', a
   assert.doesNotMatch(html, /Я проверил результат — принять/);
 });
 
+test('team setup and approved team render in English', async () => {
+  const {createTeamViews} = await import('../ui/team-view.mjs');
+  const sdk = {Button: 'button', Input: 'input', Textarea: 'textarea'};
+  const {TeamSettings, TaskTeam} = createTeamViews(React, sdk, {rest: async () => {}}, {start: async () => {}, pause: async () => {}}, englishLocalizer);
+  const project = {id: 'project', team: {technical: {model: 'chosen-code', provider: 'chosen-provider', specialist: null}}};
+  const common = {project, perform: async () => {}, busy: false, model: '', provider: '', catalog: {specialists: []}};
+  const setup = renderToStaticMarkup(React.createElement(TeamSettings, common));
+  assert.match(setup, /aria-label="Model — Technical work"/);
+  assert.match(setup, /Team setup/);
+  assert.match(setup, /Save team setup/);
+  const task = {id: 'task', status: 'approved', team: {status: 'ready', steps: [{role: 'technical', goal: 'File', acceptance: 'Check', model: 'locked-model', provider: 'locked-provider', status: 'pending'}]}};
+  const html = renderToStaticMarkup(React.createElement(TaskTeam, {...common, task, plan: 'Plan', steps: [], setSteps: () => {}}));
+  assert.match(html, /Start approved team/);
+  assert.match(html, /separate confirmation/);
+});
+
 test('bootstrap requires an explicit target and closed windows', async () => {
   let createBootstrapView;
   try { ({createBootstrapView} = await import('../bootstrap/view.mjs')); }
@@ -43,6 +64,21 @@ test('bootstrap requires an explicit target and closed windows', async () => {
   assert.match(html, /Выберите профиль/);
   assert.match(html, /Я полностью закрыл остальные окна Hermes/);
   assert.doesNotMatch(html, /Проверить пакет|Установить проверенный пакет/);
+});
+
+test('bootstrap renders its safety gate in English', async () => {
+  const {createBootstrapView} = await import('../bootstrap/view.mjs');
+  const sdk = {
+    Button: 'button', Input: 'input', useQuery: () => ({data: {profiles: ['existing-altron']}}),
+    useValue: atom => atom.get(),
+    host: {state: {connectionId: {get: () => 'local'}, profile: {get: () => 'maintenance'}, gateway: {get: () => 'open'}}},
+  };
+  const View = createBootstrapView(React, sdk, {rest: async () => {}}, englishLocalizer);
+  const html = renderToStaticMarkup(React.createElement(View));
+  assert.match(html, /Profile to update/);
+  assert.match(html, /Choose a profile/);
+  assert.match(html, /I completely closed all other Hermes windows/);
+  assert.match(html, /aria-label="Language"/);
 });
 
 test('first screen starts from an idea and keeps manual mode available', async () => {
@@ -65,4 +101,23 @@ test('first screen starts from an idea and keeps manual mode available', async (
   assert.match(html, /Обслуживание Altron/);
   assert.doesNotMatch(html, /aria-label="Название проекта"/);
   assert.match(html, /<textarea[^>]*><\/textarea>/);
+});
+
+test('first screen renders the autonomous and manual entry points in English', async () => {
+  const {createView} = await import('../ui/view.mjs');
+  const sdk = {
+    Button: 'button', Input: 'input', Textarea: 'textarea',
+    useQuery: ({queryKey}) => ({data: queryKey.includes('workspace') ? {projects: [], selected_project_id: null, workspace_id: 'isolated'} : queryKey.includes('list') ? [] : undefined, isLoading: false}),
+    useQueryClient: () => ({invalidateQueries: async () => {}}),
+    useValue: atom => atom.get(),
+    host: {state: {connectionId: {get: () => 'synthetic-source'}, profile: {get: () => 'synthetic'}, gateway: {get: () => 'open'}, model: {get: () => ''}}, onEvent: () => () => {}, request: async () => { throw new Error('No real model in this UI test'); }},
+  };
+  const View = createView(React, sdk, {rest: async () => {}, os: {}}, undefined, englishLocalizer);
+  const html = renderToStaticMarkup(React.createElement(View));
+  assert.match(html, /What do you want to create/);
+  assert.match(html, /Start interview/);
+  assert.match(html, /Manual mode/);
+  assert.match(html, /Altron maintenance/);
+  assert.match(html, /aria-label="Language"/);
+  assert.doesNotMatch(html, /Что вы хотите получить|Ручной режим|Обслуживание Altron/);
 });

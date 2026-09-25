@@ -65,3 +65,16 @@ test('setup has a folder chooser, configured provider picker and honest readines
   assert.match(renderToStaticMarkup(React.createElement(FolderPicker, {directory: '', onChoose: () => {}})), /Выбрать папку/);
   assert.match(renderToStaticMarkup(React.createElement(Diagnostics)), /без путей и содержимого задач/);
 });
+
+test('workspace tools render their controls in English through the real catalog', async () => {
+  const [{createWorkspaceTools}, {translate}] = await Promise.all([tools(), import('../ui/i18n.mjs')]);
+  const sdk = {Button: 'button', Input: 'input', host: {request: () => assert.fail('render must not start RPC')}, useQuery: () => ({data: {current: {model: 'm', provider: 'p'}, providers: [{id: 'p', label: 'Configured', authenticated: true, models: ['m']}]}})};
+  const localizer = {useI18n: () => ({t: (key, ...args) => translate('en', key, ...args)})};
+  const {Connections, FolderPicker, Diagnostics} = createWorkspaceTools(React, sdk, {rest: () => assert.fail('render must not read files')}, localizer);
+  const html = renderToStaticMarkup(React.createElement(Connections, {profile: 'isolated', queryKey: ['scope'], model: '', provider: '', setModel: () => {}, setProvider: () => {}, gateway: 'open'}));
+  assert.match(html, /Configured connection/);
+  assert.match(html, /No request was sent to the model/);
+  assert.match(html, /Advanced manual entry/);
+  assert.match(renderToStaticMarkup(React.createElement(FolderPicker, {directory: '', onChoose: () => {}})), /Choose folder/);
+  assert.match(renderToStaticMarkup(React.createElement(Diagnostics)), /without paths or task contents/);
+});

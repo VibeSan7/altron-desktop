@@ -29,7 +29,7 @@ async function actions(options = {}) {
   };
   const instance = module.createActions({api, rpc, isCurrent: () => current, getConnectionId: () => connection,
     getProfile: () => 'test-profile', onEvent: (type, fn) => { listeners.set(type, fn); return () => listeners.delete(type); },
-    onDispose: () => {}, onTrackingError: error => { throw error; }, openSession: async id => calls.push(['open', id])});
+    onDispose: () => {}, onTrackingError: error => { throw error; }, openSession: async id => calls.push(['open', id]), t: options.t});
   return {instance, calls, listeners, switchSource: () => { connection = 'source-two'; }};
 }
 
@@ -117,4 +117,19 @@ test('cancel is recorded as requested, not as confirmed cancellation', async () 
   assert.equal(calls[0][2].status, 'cancel_requested');
   assert.equal(calls[1][1], 'session.interrupt');
   assert.equal(calls.filter(c => c[0] === 'api' && c[2].status === 'cancelled').length, 0);
+});
+
+test('stored run notes use the active interface language', async () => {
+  const notes = {
+    'actions.submitUnknown': 'Delivery response was not confirmed. There was no automatic retry.',
+    'actions.cancelRequested': 'The user requested a stop. Completion is not confirmed yet.',
+  };
+  const t = key => notes[key] || key;
+  const failed = await actions({submitError: true, t});
+  await assert.rejects(failed.instance.start(parameters));
+  assert.equal(failed.calls.find(call => call[0] === 'api' && call[1].endsWith('/status'))[2].note, notes['actions.submitUnknown']);
+
+  const cancelled = await actions({t});
+  await cancelled.instance.cancel({projectId: 'project-one', run: {id: 'run-one', runtime_id: 'runtime-one'}});
+  assert.equal(cancelled.calls[0][2].note, notes['actions.cancelRequested']);
 });

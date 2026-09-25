@@ -1,8 +1,10 @@
 import {createMaintenanceView} from '../ui/maintenance-view.mjs';
+import {defaultLocalizer} from '../ui/i18n.mjs';
 
-export function createBootstrapView(React, sdk, ctx) {
+export function createBootstrapView(React, sdk, ctx, localizer = defaultLocalizer) {
   const {createElement: h, useState, useMemo} = React;
   function PendingPlans({target, scope, gateway}) {
+    const {t} = localizer.useI18n();
     const [selected, setSelected] = useState(null);
     const [reason, setReason] = useState('');
     const [busy, setBusy] = useState(false);
@@ -13,28 +15,29 @@ export function createBootstrapView(React, sdk, ctx) {
     };
     const plans = sdk.useQuery({queryKey: ['altron-maintenance', ...scope, target, 'pending-plans'], queryFn: () => request(''), enabled: gateway === 'open', retry: false});
     return h('section', {style: {display: 'grid', gap: 10}},
-      h('h2', null, 'Согласованные планы, которые ещё не запускались'),
-      h('p', null, 'В старой версии они могут блокировать обновление. Можно явно отменить выбранный план: его текст и история сохранятся. Это не остановка работающего задания и не обход защиты.'),
-      (plans.error || error) && h('p', {role: 'alert'}, error || 'Список планов не подтверждён. Обновление не разблокировано.'),
-      plans.data?.plans.length === 0 && h('p', null, 'Незапущенных командных планов нет.'),
+      h('h2', null, t('bootstrap.pendingTitle')),
+      h('p', null, t('bootstrap.pendingDescription')),
+      (plans.error || error) && h('p', {role: 'alert'}, error || t('bootstrap.pendingError')),
+      plans.data?.plans.length === 0 && h('p', null, t('bootstrap.noPending')),
       ...(plans.data?.plans || []).map(plan => h('section', {key: plan.task_id},
         h('strong', null, `${plan.project_name}: ${plan.goal}`),
         h('p', {style: {whiteSpace: 'pre-wrap'}}, plan.plan),
-        h(sdk.Button, {disabled: busy || gateway !== 'open', onClick: () => {setSelected(plan); setReason('');}}, 'Отменить этот незапущенный план'))),
-      selected && h('section', {role: 'dialog', 'aria-label': 'Отмена старого плана'},
-        h('p', null, `Профиль: ${target}. Проект: ${selected.project_name}. Задача: ${selected.goal}. Новое задание не отправляется.`),
-        h(sdk.Textarea, {'aria-label': 'Причина отмены старого плана', value: reason, maxLength: 2000, disabled: busy, onChange: event => setReason(event.target.value)}),
+        h(sdk.Button, {disabled: busy || gateway !== 'open', onClick: () => {setSelected(plan); setReason('');}}, t('bootstrap.cancelPlan')))),
+      selected && h('section', {role: 'dialog', 'aria-label': t('bootstrap.cancelDialog')},
+        h('p', null, t('bootstrap.planSummary', target, selected.project_name, selected.goal)),
+        h(sdk.Textarea, {'aria-label': t('bootstrap.cancelReason'), value: reason, maxLength: 2000, disabled: busy, onChange: event => setReason(event.target.value)}),
         h(sdk.Button, {disabled: busy || !reason.trim() || gateway !== 'open', onClick: async () => {
           setBusy(true); setError('');
           try {
             await request(`/${selected.project_id}/${selected.task_id}/cancel`, {method: 'POST', body: {reason, confirm: true, closed_other_windows: true}});
             setSelected(null); await plans.refetch();
-          } catch {setError('Отмена не подтверждена. Если план уже запускался, эта операция запрещена; не удаляйте его записи вручную.');}
+          } catch {setError(t('bootstrap.cancelFailed'));}
           finally {setBusy(false);}
-        }}, 'Подтверждаю отмену старого плана'),
-        h(sdk.Button, {disabled: busy, onClick: () => setSelected(null)}, 'Оставить старый план')));
+        }}, t('bootstrap.confirmCancel')),
+        h(sdk.Button, {disabled: busy, onClick: () => setSelected(null)}, t('bootstrap.keepPlan'))));
   }
   function Panel({scope, gateway}) {
+    const {t} = localizer.useI18n();
     const [target, setTarget] = useState('');
     const [closed, setClosed] = useState(false);
     const queryKey = ['altron-maintenance', ...scope];
@@ -44,17 +47,18 @@ export function createBootstrapView(React, sdk, ctx) {
       const body = options?.body;
       const confirmed = route === '/maintenance/apply' || route === '/maintenance/rollback';
       return ctx.rest(`/targets/${encodeURIComponent(target)}${route}`, confirmed ? {...options, body: {...body, closed_other_windows: true}} : options);
-    }}), [target, scope[0], scope[1]]);
+    }}, localizer), [target, scope[0], scope[1]]);
     return h('main', {style: {padding: 24, display: 'grid', gap: 16}},
-      h('h1', null, 'Обновление существующего Altron'),
-      h('p', null, 'Эта панель переносит установленный Altron на новую версию без повторного импорта его профиля. Подключения, проекты и история не заменяются. ИИ не запускается.'),
-      h('p', null, 'Перед обслуживанием завершите задания и полностью закройте остальные окна Hermes. Откройте только профиль altron-maintenance. Интерфейс Altron общий для профилей этого компьютера.'),
-      targets.error && h('p', {role: 'alert'}, 'Выберите профиль обслуживания altron-maintenance. Не удалось получить список установок.'),
-      h('label', null, 'Профиль для обновления', h('select', {'aria-label': 'Профиль для обновления', value: target, onChange: e => {setTarget(e.target.value); setClosed(false);}},
-        h('option', {value: ''}, 'Выберите профиль'),
+      localizer.LanguageSelector && h('div', {style: {justifySelf: 'end'}}, h(localizer.LanguageSelector)),
+      h('h1', null, t('bootstrap.title')),
+      h('p', null, t('bootstrap.description')),
+      h('p', null, t('bootstrap.safety')),
+      targets.error && h('p', {role: 'alert'}, t('bootstrap.targetError')),
+      h('label', null, t('bootstrap.target'), h('select', {'aria-label': t('bootstrap.target'), value: target, onChange: e => {setTarget(e.target.value); setClosed(false);}},
+        h('option', {value: ''}, t('bootstrap.chooseTarget')),
         ...(targets.data?.profiles || []).map(name => h('option', {key: name, value: name}, name)))),
-      targets.data?.profiles?.length === 0 && h('p', null, 'Не найден существующий Altron с базой проектов. Для новой установки импортируйте основной пакет Altron.'),
-      h('label', null, h('input', {type: 'checkbox', checked: closed, onChange: e => setClosed(e.target.checked)}), 'Я полностью закрыл остальные окна Hermes'),
+      targets.data?.profiles?.length === 0 && h('p', null, t('bootstrap.noTarget')),
+      h('label', null, h('input', {type: 'checkbox', checked: closed, onChange: e => setClosed(e.target.checked)}), t('bootstrap.windowsClosed')),
       target && closed && h(PendingPlans, {key: `plans-${target}`, target, scope, gateway}),
       target && closed && h(Maintenance, {key: target, queryKey: [...queryKey, target], gateway}));
   }

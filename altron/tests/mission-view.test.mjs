@@ -144,6 +144,23 @@ test('saved missions remain reachable from the unselected home screen', async ()
   assert.match(html, /Saved interview/);
 });
 
+test('mission interview and result states render in English', async () => {
+  const [{createMissionView}, {translate}] = await Promise.all([import('../ui/mission-view.mjs'), import('../ui/i18n.mjs')]);
+  const localizer = {useI18n: () => ({t: (key, ...args) => translate('en', key, ...args)})};
+  const sdk = {Button: 'button', Input: 'input', Textarea: 'textarea', useQuery: () => ({data: [], isLoading: false}), useQueryClient: () => ({invalidateQueries() {}}), host: {request: () => assert.fail('render must not call RPC')}};
+  const ctx = {rest: () => assert.fail('render must not call REST'), storage: {get: () => '', set() {}, remove() {}}, os: {revealPath: () => {}}};
+  const View = createMissionView(React, sdk, ctx, localizer);
+  const props = {profile: 'profile/one', connectionId: 'connection/one', gateway: 'open', queryKey: ['root'], workspaceId: 'workspace/one', model: sampleConnection.model, provider: sampleConnection.provider};
+  const intro = renderToStaticMarkup(React.createElement(View, props));
+  assert.match(intro, /Start with your idea/);
+  assert.match(intro, /What do you want to create/);
+  assert.match(intro, /Start interview/);
+  const result = renderToStaticMarkup(React.createElement(View, {...props, mission: preparedMission({phase: 'work', status: 'ready', approval: {directory: 'C:/result'}, artifacts: [{path: 'report.md', bytes: 42, sha256: 'hash'}], verification: [{id: 'file', label: 'Report', kind: 'file', passed: true, source: 'file_content'}], instructions: 'Open report.md'})}));
+  assert.match(result, /Ready based on confirmed checks/);
+  assert.match(result, /Show folder in File Explorer/);
+  assert.doesNotMatch(`${intro}${result}`, /Начнём с вашей идеи|Подтвердить и начать|Готово по подтверждённым проверкам/);
+});
+
 test('reconnect reserves a prepared turn before creating its session', async () => {
   const {actions, calls} = await actionHarness();
   assert.equal(typeof actions.resume, 'function');
